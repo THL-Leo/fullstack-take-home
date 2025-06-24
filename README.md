@@ -1,18 +1,16 @@
-# Cashmere Frontend Take Home
+# Cashmere Fullstack Take Home
 
-Build a responsive, dynamic, single-page application using **Next.js** that allows users to create and manage a multimedia portfolio. Users should be able to:
+Build a responsive, dynamic, single-page application using **Next.js** and **FastAPI** that allows users to create and manage a multimedia portfolio. Users should be able to:
 
 - Upload images and videos.
 - Provide descriptions and metadata for each item.
 - Organize portfolio items into expandable/collapsible sections.
 - View a live preview of the portfolio.
-- Save their portfolio by interacting with a backend API.
+- Save their portfolio.
 
 You are encouraged to make the UI polished and user-friendly, and demonstrate thoughtful state management and code organization. Bonus points for animations, elegant component abstractions, or enhancements to UX.
 
-**🔎 You can use any coding tools that you like but you must be able to explain every line of code and what it does.**
-
----
+**🔎 You can use any AI coding tools that you like but you must be able to explain every line of code and what it does.**
 
 ## Technical Requirements
 
@@ -41,21 +39,20 @@ You are encouraged to make the UI polished and user-friendly, and demonstrate th
   - Provide a live visual preview area for the portfolio.
   - Style and layout is up to you — treat this like a real-world portfolio site.
 
----
+### Backend (FastAPI, Pydantic, MongoDB (optional))
 
-## Backend
-**Completing the API**
-Please fill in the blank for the `POST /upload` endpoint to make the endpoint functional
+- **APIs**:
+  - At minimum implement endpoints to upload items, save portfolios, and load portfolios by user
 
-Run the server using the following:
-```bash
-pip install fastapi uvicorn python-multipart pydantic
-uvicorn main:app --reload
-```
+- **Data Validation**:
+  - Use Pydantic to define data models and validation rules
+ 
+- **Data Persistence**
+  - Save data locally or set up a database connection for across-session persistence
+  - Enable multi-tenancy (i.e. users can edit only their own portfolios)
 
-You are free to modify all existing code, plug in a database solution or add endpoints as you see fit.
-
----
+- **Code Organization**
+  - Follow software engineering best practices in laying out your code
 
 ## Submission Instructions
 
@@ -65,10 +62,8 @@ You are free to modify all existing code, plug in a database solution or add end
    - Screenshots or a brief walkthrough of your UX.
    - Any additional features you built.
    - Any future improvements and features.
-3. Provide a zip or GitHub link for both frontend and backend code.
-4. (optional) deploy the backend and frontend (e.g. Render, Heroku)
-
----
+3. Provide a GitHub or repo link for all code. **Please do not provide a zip.**
+4. (Bonus points) deploy the web app (e.g. Render, Heroku)
 
 ## Evaluation Criteria
 
@@ -76,4 +71,4 @@ You are free to modify all existing code, plug in a database solution or add end
 - UX and UI polish.
 - Proper use of React patterns and state management.
 - Successful integration with FastAPI.
-- Creative enhancements beyond the core requirements.
+- Creative enhancements and features beyond the core requirements.
