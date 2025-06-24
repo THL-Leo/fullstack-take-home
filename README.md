@@ -63,7 +63,7 @@ You are encouraged to make the UI polished and user-friendly, and demonstrate th
    - Any additional features you built.
    - Any future improvements and features.
 3. Provide a GitHub or repo link for all code. **Please do not provide a zip.**
-4. (Bonus points) deploy the web app (e.g. Render, Heroku)
+4. (Bonus points) deploy the web app (e.g. Render, Heroku).
 
 ## Evaluation Criteria
 
