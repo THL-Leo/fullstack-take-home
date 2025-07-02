@@ -1,0 +1,472 @@
+Ask questions if you don't understand or need clarification and make minimum changes to the code when adding new features. We want incremental changes.
+
+# Cashmere Fullstack Portfolio Project - Cursor Rules
+
+## Project Overview
+This is a dynamic multimedia portfolio management application built with Next.js and FastAPI. Users can create, manage, and organize their creative work into professional portfolios with multimedia support.
+
+## Tech Stack
+- **Frontend**: Next.js 14+ (App Router), React 18+, TypeScript, Tailwind CSS
+- **Backend**: FastAPI, Pydantic v2, Python 3.9+
+- **Database**: MongoDB (optional) or local file storage
+- **State Management**: Zustand (recommended for rapid development)
+- **File Handling**: Multipart uploads, image/video processing
+- **Deployment**: Vercel (frontend), Render/Heroku (backend)
+
+## Code Style & Conventions
+
+### Linting & Formatting
+- Use ESLint with Airbnb configuration
+- Use Prettier for code formatting
+- Configure pre-commit hooks with Husky
+- Follow Airbnb React/TypeScript style guide
+
+### General
+- Use TypeScript for all new code
+- Prefer functional components with hooks over class components
+- Use async/await over Promise chains
+- Write self-documenting code with clear variable names
+- Include JSDoc comments for complex functions
+- Use absolute imports with path mapping (@/ prefix)
+
+## Rapid Development Strategy (2-Day Timeline)
+
+### State Management (Zustand)
+```tsx
+// store/portfolioStore.ts
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+interface PortfolioStore {
+  items: PortfolioItem[]
+  sections: Section[]
+  addItem: (item: PortfolioItem) => void
+  updateItem: (id: string, updates: Partial<PortfolioItem>) => void
+  // ... other actions
+}
+
+export const usePortfolioStore = create<PortfolioStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      sections: [],
+      addItem: (item) => set(state => ({ 
+        items: [...state.items, item] 
+      })),
+      // ... other implementations
+    }),
+    { name: 'portfolio-storage' } // localStorage key
+  )
+)
+```
+
+### Persistence Strategy (No Auth)
+1. **Primary**: localStorage via Zustand persist middleware
+2. **Secondary**: Simple backend with auto-generated portfolio IDs
+3. **Sharing**: Generate shareable URLs with portfolio data
+
+```tsx
+// Generate shareable portfolio URL
+const sharePortfolio = () => {
+  const portfolioData = encodeURIComponent(JSON.stringify(portfolio))
+  return `${window.location.origin}/view?data=${portfolioData}`
+}
+```
+
+### Frontend (Next.js/React)
+- Use App Router (app directory) structure
+- Components should be in PascalCase (e.g., `PortfolioItem.tsx`)
+- Use `'use client'` directive only when necessary
+- Prefer Server Components by default
+- Custom hooks should start with `use` prefix
+- Props interfaces should end with `Props` (e.g., `PortfolioItemProps`)
+- Use Tailwind classes, avoid inline styles
+- Group Tailwind classes logically: layout, spacing, colors, typography
+
+### Backend (FastAPI)
+- Follow Python PEP 8 conventions
+- Use snake_case for variables and functions
+- Use PascalCase for classes and Pydantic models
+- Routes should be grouped in separate router files
+- Use dependency injection for database connections
+- All endpoints should have proper type hints and documentation
+- Use Pydantic models for request/response validation
+
+## File Structure
+
+```
+project-root/
+├── frontend/                 # Next.js application
+│   ├── app/                 # App Router pages
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/             # Basic UI components (buttons, inputs)
+│   │   ├── portfolio/      # Portfolio-specific components
+│   │   └── layout/         # Layout components
+│   ├── lib/                # Utilities and configurations
+│   ├── hooks/              # Custom React hooks
+│   ├── store/              # State management
+│   ├── types/              # TypeScript type definitions
+│   └── public/             # Static assets
+├── backend/                 # FastAPI application
+│   ├── app/
+│   │   ├── api/            # API route handlers
+│   │   ├── models/         # Pydantic models
+│   │   ├── services/       # Business logic
+│   │   ├── utils/          # Helper functions
+│   │   └── database/       # Database configuration
+│   ├── tests/              # Backend tests
+│   └── requirements.txt    # Python dependencies
+└── README.md
+```
+
+## Component Guidelines
+
+### React Components
+- Keep components small and focused (single responsibility)
+- Use composition over inheritance
+- Extract custom hooks for complex logic
+- Use proper TypeScript interfaces for props
+- Include loading states and error handling
+- Make components accessible (ARIA labels, keyboard navigation)
+
+Example component structure:
+```tsx
+interface ComponentNameProps {
+  // Props definition
+}
+
+export default function ComponentName({ prop1, prop2 }: ComponentNameProps) {
+  // Hooks at the top
+  // Event handlers
+  // Render logic
+}
+```
+
+### State Management (Zustand)
+- Use Zustand for all global state management
+- Persist portfolio data to localStorage automatically
+- Keep state flat and simple for rapid development
+- Use immer middleware for complex state updates
+
+Example Zustand store:
+```tsx
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+const usePortfolioStore = create()(
+  persist(
+    (set, get) => ({
+      portfolio: null,
+      isLoading: false,
+      addItem: (item) => set(state => ({
+        portfolio: {
+          ...state.portfolio,
+          items: [...state.portfolio.items, item]
+        }
+      })),
+    }),
+    { name: 'portfolio-data' }
+  )
+)
+```
+
+## API Design
+
+### FastAPI Endpoints
+- Use RESTful conventions
+- Group related endpoints with APIRouter
+- Include proper HTTP status codes
+- Use consistent response formats
+- Implement proper error handling with custom exceptions
+
+Example endpoint structure:
+```python
+@router.post("/portfolios", response_model=PortfolioResponse)
+async def create_portfolio(
+    portfolio: PortfolioCreate,
+    db: Database = Depends(get_database)
+) -> PortfolioResponse:
+    # Implementation
+```
+
+### Request/Response Models
+- Use Pydantic models for all request/response data
+- Include proper validation rules
+- Use descriptive field names
+- Add examples in model docstrings
+
+## Database Schema Guidelines
+- Use clear, descriptive field names
+- Include proper indexes for frequently queried fields
+- Implement soft deletes where appropriate
+- Use UUID for document IDs
+- Include timestamps (created_at, updated_at)
+
+### Simple Multimedia Portfolio Schema
+
+```typescript
+// TypeScript interfaces
+interface PortfolioItem {
+  id: string
+  type: 'image' | 'video'
+  filename: string
+  originalName: string
+  url: string
+  thumbnailUrl?: string // for videos
+  title: string
+  description: string
+  metadata: {
+    size: number // bytes
+    dimensions?: { width: number; height: number }
+    duration?: number // for videos in seconds
+    format: string // 'jpeg', 'mp4', etc.
+  }
+  sectionId: string
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+interface Section {
+  id: string
+  name: string
+  description?: string
+  isExpanded: boolean
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+interface Portfolio {
+  id: string
+  title: string
+  description?: string
+  sections: Section[]
+  items: PortfolioItem[]
+  createdAt: string
+  updatedAt: string
+}
+```
+
+```python
+# Pydantic models for FastAPI
+from pydantic import BaseModel, Field
+from typing import Optional, Literal
+from datetime import datetime
+
+class ItemMetadata(BaseModel):
+    size: int
+    dimensions: Optional[dict] = None
+    duration: Optional[int] = None
+    format: str
+
+class PortfolioItemCreate(BaseModel):
+    type: Literal['image', 'video']
+    filename: str
+    original_name: str
+    title: str
+    description: str = ""
+    section_id: str
+    order: int = 0
+
+class PortfolioItem(PortfolioItemCreate):
+    id: str
+    url: str
+    thumbnail_url: Optional[str] = None
+    metadata: ItemMetadata
+    created_at: datetime
+    updated_at: datetime
+
+class SectionCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    order: int = 0
+
+class Section(SectionCreate):
+    id: str
+    is_expanded: bool = True
+    created_at: datetime
+    updated_at: datetime
+
+class Portfolio(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    sections: list[Section] = []
+    items: list[PortfolioItem] = []
+    created_at: datetime
+    updated_at: datetime
+```
+
+## Security Best Practices
+- Validate all file uploads (type, size, content)
+- Sanitize user inputs
+- Implement proper CORS configuration
+- Use environment variables for sensitive data
+- Implement rate limiting for file uploads
+- Add CSRF protection
+
+## Performance Considerations
+- Implement image/video compression before upload
+- Use Next.js Image component for optimized images
+- Implement lazy loading for portfolio items
+- Use React.memo for expensive components
+- Implement virtual scrolling for large lists
+- Add proper caching headers
+
+## Error Handling
+- Use try-catch blocks for async operations
+- Implement global error boundaries in React
+- Return consistent error responses from API
+- Log errors appropriately (avoid logging sensitive data)
+- Show user-friendly error messages
+
+## Testing Guidelines
+- Write unit tests for utility functions
+- Test API endpoints with proper mocking
+- Include integration tests for critical flows
+- Test file upload functionality thoroughly
+- Test responsive design on different screen sizes
+
+## UI/UX Standards
+- Follow responsive design principles (mobile-first)
+- Implement smooth animations and transitions
+- Use consistent spacing and typography
+- Provide visual feedback for user actions
+- Include loading skeletons for async content
+- Ensure accessibility (contrast, keyboard navigation)
+
+## File Upload Specifications
+- Supported formats: JPEG, PNG, WebP (images), MP4, WebM (videos)
+- Max file size: 50MB for videos, 10MB for images
+- Generate thumbnails for videos
+- Implement progress indicators for uploads
+- Support drag-and-drop functionality
+
+## Environment Variables
+- Use `.env.local` for frontend environment variables
+- Use `.env` for backend environment variables
+- Never commit environment files to version control
+- Document all required environment variables in README
+
+## Deployment Considerations
+- Use Next.js static optimization where possible
+- Implement proper build optimization
+- Configure CDN for media files
+- Set up proper monitoring and logging
+- Use containerization for consistent deployments
+
+## Code Review Checklist
+- [ ] TypeScript strict mode compliance
+- [ ] Proper error handling implementation
+- [ ] Responsive design verification
+- [ ] Accessibility standards met
+- [ ] Performance optimizations applied
+- [ ] Security best practices followed
+- [ ] Code is well-documented
+- [ ] Tests are included and passing
+
+## Common Patterns to Follow
+
+### Data Fetching
+```tsx
+// Use SWR or React Query for data fetching
+const { data, error, isLoading } = useSWR('/api/portfolios', fetcher)
+```
+
+### Form Handling
+```tsx
+// Use react-hook-form for complex forms
+const { register, handleSubmit, formState: { errors } } = useForm<FormData>()
+```
+
+### File Upload
+```tsx
+// Implement with progress tracking and error handling
+const uploadFile = async (file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  // Upload logic with progress
+}
+```
+
+When working on this project, prioritize user experience, code maintainability, and performance. Always consider the end-user's perspective when making design and implementation decisions.
+
+## Realistic 2-Day Development Roadmap
+
+### Day 1 - Core Functionality (8-10 hours)
+**Morning (4 hours):**
+- [ ] Project setup (Next.js + FastAPI) - 1 hour
+- [ ] Zustand store with localStorage - 30 minutes  
+- [ ] Basic file upload with `react-dropzone` - 2 hours
+- [ ] Simple file storage endpoint (FastAPI) - 30 minutes
+
+**Afternoon (4-6 hours):**
+- [ ] Add portfolio item form with `react-hook-form` - 2 hours
+- [ ] Basic sections management (add/edit) - 2 hours
+- [ ] Simple list view of items and sections - 2 hours
+
+**End of Day 1 Goal:** Users can upload files, add them to sections, see a basic list
+
+### Day 2 - Polish & Integration (8-10 hours)
+**Morning (4 hours):**
+- [ ] Expand/collapse sections (basic CSS or simple framer-motion) - 2 hours
+- [ ] Save portfolio to backend API - 1 hour
+- [ ] Load portfolio from backend - 1 hour
+
+**Afternoon (4-6 hours):**
+- [ ] Basic responsive layout - 2 hours
+- [ ] Error handling and loading states - 1 hour
+- [ ] Final polish and bug fixes - 2-3 hours
+
+**End of Day 2 Goal:** Working portfolio app with save/load functionality
+
+### Absolute Minimum Features (Complete These First)
+1. File upload (images only if short on time)
+2. Add title/description to uploaded files  
+3. Create sections and assign files to sections
+4. Save/load portfolio data
+5. Basic responsive layout
+
+### Only Add If Ahead of Schedule
+- Video support
+- Drag & drop reordering
+- Advanced animations
+- File thumbnails
+- Portfolio sharing
+
+### Quick Implementation Tips (Priority Order)
+**MUST USE (Time Savers):**
+- Use `react-dropzone` for file uploads (saves 3+ hours)
+- Use `react-hook-form` for form handling (saves 2+ hours)  
+- Use plain Tailwind classes (no custom CSS)
+- Keep API endpoints simple (CRUD operations only)
+
+**USE IF TIME PERMITS:**
+- Use `framer-motion` ONLY for basic expand/collapse (avoid complex animations)
+- Use Tailwind UI components if you have existing access
+- Focus on desktop-first, mobile-responsive second
+- Use placeholder images for missing thumbnails
+
+**AVOID (Time Sinks):**
+- Complex animations beyond basic expand/collapse
+- Custom styling beyond Tailwind utilities
+- File compression/optimization (use as-is)
+- Advanced form validation beyond required fields
+
+### Minimum Viable Features
+- [ ] File upload (images/videos)
+- [ ] Add title and description to items
+- [ ] Organize items into sections
+- [ ] Expand/collapse sections
+- [ ] Save portfolio to backend
+- [ ] Load saved portfolio
+- [ ] Basic responsive design
+
+### Nice-to-Have (If Time Permits)
+- [ ] Drag & drop reordering
+- [ ] Image/video thumbnails
+- [ ] Advanced animations
+- [ ] Portfolio sharing via URL
+- [ ] File compression
+- [ ] Advanced validation

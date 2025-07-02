@@ -1,0 +1,19 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "aiofiles>=24.1.0",
+    "fastapi>=0.115.14",
+    "ffmpeg-python>=0.2.0",
+    "motor>=3.7.1",
+    "opencv-python>=4.11.0.86",
+    "pillow>=11.3.0",
+    "pydantic>=2.11.7",
+    "python-dotenv>=1.1.1",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.20",
+    "uvicorn[standard]>=0.35.0",
+]
