@@ -260,15 +260,15 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
       <div className="space-y-6">
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-start space-x-2">
-              <div className="text-red-500 text-lg">⚠️</div>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-5 h-5 bg-gray-300 rounded-full flex-shrink-0 mt-0.5"></div>
               <div>
-                <h4 className="text-red-800 font-medium text-sm">Upload Error</h4>
-                <p className="text-red-700 text-sm mt-1">{error}</p>
+                <h4 className="text-gray-900 font-medium text-sm">Upload Error</h4>
+                <p className="text-gray-600 text-sm mt-1">{error}</p>
                 <button
                   onClick={() => setError(null)}
-                  className="text-red-600 hover:text-red-800 text-sm underline mt-2"
+                  className="text-gray-500 hover:text-gray-700 text-sm underline mt-2"
                 >
                   Dismiss
                 </button>
@@ -279,12 +279,12 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
 
         {/* Success Display */}
         {isSuccess && uploadedData && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-start space-x-2">
-              <div className="text-green-500 text-lg">✅</div>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <div className="w-5 h-5 bg-black rounded-full flex-shrink-0 mt-0.5"></div>
               <div>
-                <h4 className="text-green-800 font-medium text-sm">Upload Successful</h4>
-                <p className="text-green-700 text-sm mt-1">File uploaded successfully. Please fill in the details below.</p>
+                <h4 className="text-gray-900 font-medium text-sm">Upload Successful</h4>
+                <p className="text-gray-600 text-sm mt-1">File uploaded successfully. Please fill in the details below.</p>
               </div>
             </div>
           </div>
@@ -295,26 +295,28 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
           <div
             {...getRootProps()}
             className={`
-              border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+              border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-200
               ${isDragActive 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
+                ? 'border-gray-400 bg-gray-50' 
+                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               }
             `}
           >
             <input {...getInputProps()} />
-            <div className="space-y-2">
-              <div className="text-4xl">📁</div>
+            <div className="space-y-4">
+              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto">
+                <div className="w-6 h-6 border-2 border-gray-400 rounded border-dashed"></div>
+              </div>
               {isDragActive ? (
-                <p className="text-blue-600">Drop the file here...</p>
+                <p className="text-gray-700 font-medium">Drop the file here</p>
               ) : (
-                <div>
-                  <p className="text-gray-600">Drag & drop a file here, or click to select</p>
-                  <p className="text-sm text-gray-500 mt-1">
+                <div className="space-y-2">
+                  <p className="text-gray-700 font-medium">Drag & drop a file here, or click to select</p>
+                  <p className="text-sm text-gray-500">
                     Supports: Images (JPEG, PNG, WebP) up to 10MB, Videos (MP4, WebM, MOV, AVI, MPEG) up to 50MB
                   </p>
-                  <p className="text-xs text-red-500 mt-1">
-                    ⚠️ HEIC, GIF, and other formats are not supported
+                  <p className="text-xs text-gray-400">
+                    Note: HEIC, GIF, and other formats are not supported
                   </p>
                 </div>
               )}
@@ -381,14 +383,14 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
 
             {/* Upload Progress */}
             {isUploading && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="text-blue-600">⏳</div>
+                  <div className="w-5 h-5 bg-gray-400 rounded-full animate-pulse flex-shrink-0"></div>
                   <div className="flex-1">
-                    <p className="text-sm text-blue-800">Uploading... {uploadProgress}%</p>
-                    <div className="mt-2 bg-blue-200 rounded-full h-2">
+                    <p className="text-sm text-gray-700 font-medium">Uploading... {uploadProgress}%</p>
+                    <div className="mt-2 bg-gray-200 rounded-full h-2">
                       <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-gray-800 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
@@ -413,7 +415,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                   </label>
                   <textarea
                     {...register('description')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-500"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 placeholder:text-gray-400 transition-colors"
                     rows={3}
                     placeholder="Add a description (optional)"
                   />
@@ -426,7 +428,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                   </label>
                   <select
                     {...register('sectionId')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                     onChange={(e) => {
                       setValue('sectionId', e.target.value);
                       setIsCreatingNewSection(e.target.value === 'new');

@@ -52,26 +52,15 @@ export default function PortfolioView() {
     }
   };
 
-  const handleDeleteSection = async (sectionId: string, sectionName: string) => {
+  const handleDeleteSection = async (sectionId: string, sectionTitle: string) => {
     if (!currentPortfolio) return;
     
-    console.log('🗑️ Attempting to delete section:', { 
-      sectionId, 
-      sectionName, 
-      portfolioId: currentPortfolio.id 
-    });
-    
-    if (confirm(`Are you sure you want to delete the section "${sectionName}"? This will also delete all items in this section. This action cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete "${sectionTitle}"? Items in this section will be moved to Unsorted. This action cannot be undone.`)) {
       try {
-        console.log('💬 User confirmed deletion, calling API...');
-        const response = await api.deleteSection(currentPortfolio.id, sectionId);
-        console.log('✅ Delete section API response:', response);
-        
-        console.log('🔄 Refreshing portfolio...');
+        await api.deleteSection(currentPortfolio.id, sectionId);
         await refreshCurrentPortfolio();
-        console.log('✅ Portfolio refreshed successfully');
       } catch (error) {
-        console.error('❌ Failed to delete section:', error);
+        console.error('Failed to delete section:', error);
         alert('Failed to delete section. Please try again.');
       }
     }
@@ -79,10 +68,14 @@ export default function PortfolioView() {
 
   if (!currentPortfolio) {
     return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">📋</div>
-        <h2 className="text-xl font-medium text-gray-900 mb-2">No Portfolio Selected</h2>
-        <p className="text-gray-600">Create or select a portfolio to get started.</p>
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <div className="w-8 h-8 border-2 border-gray-300 rounded border-dashed"></div>
+          </div>
+          <h2 className="text-lg font-medium text-gray-900 mb-2">No Portfolio Selected</h2>
+          <p className="text-gray-500">Create or select a portfolio to get started.</p>
+        </div>
       </div>
     );
   }
@@ -113,16 +106,16 @@ export default function PortfolioView() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{currentPortfolio.title}</h1>
+      <div className="bg-white border border-gray-100 rounded-lg p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-2xl font-medium text-black mb-1">{currentPortfolio.title}</h1>
             {currentPortfolio.description && (
-              <p className="text-gray-600 mt-1">{currentPortfolio.description}</p>
+              <p className="text-gray-600">{currentPortfolio.description}</p>
             )}
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-gray-500">
+          <div className="flex items-center space-x-6 ml-6">
+            <div className="text-sm text-gray-400 font-mono">
               {currentPortfolio.items.length} items
             </div>
             <Button
@@ -154,26 +147,24 @@ export default function PortfolioView() {
             const isExpanded = expandedSections.has(section.id);
             
             return (
-              <div key={section.id} className="bg-white rounded-lg shadow-sm border">
+              <div key={section.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden">
                 {/* Section Header */}
                 <div 
-                  className="p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="p-5 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => toggleSection(section.id)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-lg">
-                        {isExpanded ? '📂' : '📁'}
-                      </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
                       <div>
                         <h3 className="text-lg font-medium text-gray-900">{section.title}</h3>
                         {section.description && (
-                          <p className="text-sm text-gray-600">{section.description}</p>
+                          <p className="text-sm text-gray-500 mt-1">{section.description}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm text-gray-400 font-mono">
                         {sectionItems.length} items
                       </span>
                       <button
@@ -181,13 +172,13 @@ export default function PortfolioView() {
                           e.stopPropagation();
                           handleDeleteSection(section.id, section.title);
                         }}
-                        className="text-red-500 hover:text-red-700 transition-colors p-1"
+                        className="text-gray-300 hover:text-gray-500 transition-colors text-xs"
                         title="Delete section"
                       >
-                        🗑️
+                        Delete
                       </button>
                       <svg 
-                        className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                         fill="none" 
                         stroke="currentColor" 
                         viewBox="0 0 24 24"
@@ -200,12 +191,12 @@ export default function PortfolioView() {
                 
                 {/* Section Content */}
                 {isExpanded && sectionItems.length > 0 && (
-                  <div className="p-4">
+                  <div className="p-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {sectionItems.map((item) => (
-                        <div key={item.id} className="border rounded-lg overflow-hidden">
+                        <div key={item.id} className="border border-gray-100 rounded-lg overflow-hidden hover:border-gray-200 transition-colors">
                           {/* Media Preview */}
-                          <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                          <div className="aspect-video bg-gray-50 flex items-center justify-center">
                             {item.type === 'image' ? (
                               <img
                                 src={item.url.startsWith('http') ? item.url : `${API_BASE_URL}${item.url}`}
@@ -232,9 +223,8 @@ export default function PortfolioView() {
                                   />
                                 ) : (
                                   <div className="text-center flex items-center justify-center h-full">
-                                    <div>
-                                      <div className="text-4xl mb-2">🎥</div>
-                                      <p className="text-sm text-gray-600">Video File</p>
+                                    <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
+                                      <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
                                     </div>
                                   </div>
                                 )}
@@ -243,23 +233,23 @@ export default function PortfolioView() {
                           </div>
 
                           {/* Item Info */}
-                          <div className="p-3">
-                            <div className="flex items-start justify-between mb-1">
-                              <h4 className="font-medium text-gray-900 flex-1">{item.title}</h4>
+                          <div className="p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <h4 className="font-medium text-gray-900 flex-1 text-sm">{item.title}</h4>
                               <button
                                 onClick={() => handleDeleteItem(item.id)}
-                                className="text-red-500 hover:text-red-700 transition-colors ml-2 p-1"
+                                className="text-gray-300 hover:text-gray-500 transition-colors text-xs ml-2 flex-shrink-0"
                                 title="Delete item"
                               >
-                                🗑️
+                                Delete
                               </button>
                             </div>
                             {item.description && (
-                              <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                              <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
                             )}
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>{item.originalName}</span>
-                              <span>
+                            <div className="flex items-center justify-between text-xs text-gray-400">
+                              <span className="truncate">{item.originalName}</span>
+                              <span className="ml-2 flex-shrink-0">
                                 {item.metadata.dimensions && 
                                   `${item.metadata.dimensions.width}×${item.metadata.dimensions.height}`
                                 }
@@ -277,27 +267,25 @@ export default function PortfolioView() {
           
           {/* Unsorted Items */}
           {itemsBySection.unsorted && itemsBySection.unsorted.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm border">
+            <div className="bg-white border border-gray-100 rounded-lg overflow-hidden">
               <div 
-                className="p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors"
+                className="p-5 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => toggleSection('unsorted')}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-lg">
-                      {expandedSections.has('unsorted') ? '📂' : '📁'}
-                    </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
                     <div>
                       <h3 className="text-lg font-medium text-gray-900">Unsorted</h3>
-                      <p className="text-sm text-gray-600">Items not organized into sections</p>
+                      <p className="text-sm text-gray-500 mt-1">Items not organized into sections</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-400 font-mono">
                       {itemsBySection.unsorted.length} items
                     </span>
                     <svg 
-                      className={`w-5 h-5 text-gray-400 transition-transform ${expandedSections.has('unsorted') ? 'rotate-180' : ''}`}
+                      className={`w-4 h-4 text-gray-400 transition-transform ${expandedSections.has('unsorted') ? 'rotate-180' : ''}`}
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -309,12 +297,12 @@ export default function PortfolioView() {
               </div>
               
               {expandedSections.has('unsorted') && (
-                <div className="p-4">
+                <div className="p-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {itemsBySection.unsorted.map((item) => (
-                      <div key={item.id} className="border rounded-lg overflow-hidden">
+                      <div key={item.id} className="border border-gray-100 rounded-lg overflow-hidden hover:border-gray-200 transition-colors">
                         {/* Media Preview */}
-                        <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                        <div className="aspect-video bg-gray-50 flex items-center justify-center">
                           {item.type === 'image' ? (
                             <img
                               src={item.url.startsWith('http') ? item.url : `${API_BASE_URL}${item.url}`}
@@ -341,9 +329,8 @@ export default function PortfolioView() {
                                 />
                               ) : (
                                 <div className="text-center flex items-center justify-center h-full">
-                                  <div>
-                                    <div className="text-4xl mb-2">🎥</div>
-                                    <p className="text-sm text-gray-600">Video File</p>
+                                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
+                                    <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
                                   </div>
                                 </div>
                               )}
@@ -352,23 +339,23 @@ export default function PortfolioView() {
                         </div>
 
                         {/* Item Info */}
-                        <div className="p-3">
-                          <div className="flex items-start justify-between mb-1">
-                            <h4 className="font-medium text-gray-900 flex-1">{item.title}</h4>
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-medium text-gray-900 flex-1 text-sm">{item.title}</h4>
                             <button
                               onClick={() => handleDeleteItem(item.id)}
-                              className="text-red-500 hover:text-red-700 transition-colors ml-2 p-1"
+                              className="text-gray-300 hover:text-gray-500 transition-colors text-xs ml-2 flex-shrink-0"
                               title="Delete item"
                             >
-                              🗑️
+                              Delete
                             </button>
                           </div>
                           {item.description && (
-                            <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                            <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
                           )}
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>{item.originalName}</span>
-                            <span>
+                          <div className="flex items-center justify-between text-xs text-gray-400">
+                            <span className="truncate">{item.originalName}</span>
+                            <span className="ml-2 flex-shrink-0">
                               {item.metadata.dimensions && 
                                 `${item.metadata.dimensions.width}×${item.metadata.dimensions.height}`
                               }
@@ -384,10 +371,12 @@ export default function PortfolioView() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-          <div className="text-6xl mb-4">📷</div>
+        <div className="bg-white border border-gray-100 rounded-lg p-16 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <div className="w-8 h-8 border-2 border-gray-300 rounded border-dashed"></div>
+          </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Items Yet</h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-500 mb-6">
             Upload your first images or videos to start building your portfolio.
           </p>
           <Button onClick={() => setIsUploadModalOpen(true)}>

@@ -17,16 +17,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={`
-            w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-            placeholder:text-gray-500
-            ${error ? 'border-red-500' : ''}
+            w-full px-3 py-2 border border-gray-200 rounded-md bg-white text-gray-900
+            focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400
+            placeholder:text-gray-400 transition-colors
+            ${error ? 'border-gray-400 ring-1 ring-gray-400' : ''}
             ${className}
           `}
           {...props}
         />
         {error && (
-          <p className="mt-1 text-sm text-red-600">{error}</p>
+          <p className="mt-1 text-sm text-gray-600">{error}</p>
         )}
       </div>
     );

@@ -50,40 +50,40 @@ export default function Sidebar() {
 
 
   return (
-    <div className="w-80 bg-gray-50 border-r border-gray-200 h-full overflow-y-auto">
-      <div className="p-4 space-y-6">
+    <div className="w-72 bg-gray-50 border-r border-gray-100 h-full overflow-y-auto">
+      <div className="p-6">
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-3">My Portfolios</h3>
+          <h3 className="text-sm font-medium text-gray-900 mb-4 tracking-wide uppercase">My Portfolios</h3>
           
           {isLoading ? (
-            <div className="text-center py-4">
-              <div className="text-gray-500">Loading portfolios...</div>
+            <div className="text-center py-8">
+              <div className="text-gray-400 text-sm">Loading portfolios...</div>
             </div>
           ) : portfolios.length > 0 ? (
             <div className="space-y-2">
               {portfolios.map((portfolio) => (
                 <div 
                   key={portfolio.id} 
-                  className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                  className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 ${
                     currentPortfolio?.id === portfolio.id 
-                      ? 'bg-blue-50 border-blue-200' 
-                      : 'bg-white hover:bg-gray-50'
+                      ? 'bg-white border-gray-200 shadow-sm' 
+                      : 'bg-transparent border-gray-100 hover:bg-white hover:border-gray-200 hover:shadow-sm'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div 
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                       onClick={() => handleSelectPortfolio(portfolio.id)}
                     >
-                      <h4 className="font-medium text-gray-900">{portfolio.title}</h4>
+                      <h4 className="font-medium text-gray-900 truncate">{portfolio.title}</h4>
                       {portfolio.description && (
-                        <p className="text-sm text-gray-600 mt-1">{portfolio.description}</p>
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{portfolio.description}</p>
                       )}
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-xs text-gray-500">
-                          Created {new Date(portfolio.createdAt).toLocaleDateString()}
+                      <div className="flex items-center justify-between mt-3">
+                        <p className="text-xs text-gray-400">
+                          {new Date(portfolio.createdAt).toLocaleDateString()}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-400">
                           {portfolio.items?.length || 0} items
                         </p>
                       </div>
@@ -93,20 +93,22 @@ export default function Sidebar() {
                         e.stopPropagation();
                         handleDeletePortfolio(portfolio.id, portfolio.title);
                       }}
-                      className="text-red-500 hover:text-red-700 transition-colors p-1 ml-2"
+                      className="text-gray-300 hover:text-gray-500 transition-colors text-xs ml-3 flex-shrink-0"
                       title="Delete portfolio"
                     >
-                      🗑️
+                      Delete
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-2">📋</div>
-              <p className="text-gray-600 text-sm">
-                No portfolios yet. Create your first portfolio to get started!
+            <div className="text-center py-12">
+              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <div className="w-6 h-6 border-2 border-gray-400 rounded border-dashed"></div>
+              </div>
+              <p className="text-gray-500 text-sm">
+                No portfolios yet. Create your first portfolio to get started.
               </p>
             </div>
           )}
