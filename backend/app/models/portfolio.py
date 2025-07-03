@@ -55,6 +55,25 @@ class PortfolioItem(BaseModel):
     title: str
     description: str = ""
     metadata: ItemMetadata
+    section_id: Optional[PyObjectId] = None  # New field for section assignment
+    order: int = 0
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+class SectionCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    order: int = 0
+
+class Section(BaseModel):
+    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    title: str
+    description: Optional[str] = None
     order: int = 0
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -72,7 +91,8 @@ class Portfolio(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
     title: str
     description: Optional[str] = None
-    items: List[PortfolioItem] = []
+    items: List[PortfolioItem] = []  # Keep for backward compatibility
+    sections: List[Section] = []  # New sections array
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from bson import ObjectId
 
-from app.models import Portfolio, PortfolioCreate, PortfolioItem, PortfolioItemCreate
+from app.models import Portfolio, PortfolioCreate, PortfolioItem, PortfolioItemCreate, Section, SectionCreate
 from app.database import get_database
 
 router = APIRouter()
@@ -12,6 +12,7 @@ async def create_portfolio(portfolio: PortfolioCreate, db=Depends(get_database))
     """Create a new portfolio"""
     portfolio_dict = portfolio.dict()
     portfolio_dict["items"] = []
+    portfolio_dict["sections"] = []
     
     result = await db.portfolios.insert_one(portfolio_dict)
     created_portfolio = await db.portfolios.find_one({"_id": result.inserted_id})
@@ -208,3 +209,103 @@ async def list_portfolios(db=Depends(get_database)):
         })
     
     return portfolios
+
+
+# Section endpoints
+@router.post("/portfolios/{portfolio_id}/sections", response_model=Section)
+async def create_section(portfolio_id: str, section: SectionCreate, db=Depends(get_database)):
+    """Create a new section in a portfolio"""
+    if not ObjectId.is_valid(portfolio_id):
+        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    
+    # Check if portfolio exists
+    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    # Create section
+    section_dict = section.dict()
+    section_dict["_id"] = ObjectId()
+    new_section = Section(**section_dict)
+    
+    # Add to portfolio
+    await db.portfolios.update_one(
+        {"_id": ObjectId(portfolio_id)},
+        {"$push": {"sections": new_section.dict()}}
+    )
+    
+    return new_section
+
+@router.get("/portfolios/{portfolio_id}/sections")
+async def list_sections(portfolio_id: str, db=Depends(get_database)):
+    """List all sections in a portfolio"""
+    if not ObjectId.is_valid(portfolio_id):
+        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    
+    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    sections = portfolio.get("sections", [])
+    return [Section(**section) for section in sections]
+
+@router.put("/portfolios/{portfolio_id}/sections/{section_id}", response_model=Section)
+async def update_section(portfolio_id: str, section_id: str, section: SectionCreate, db=Depends(get_database)):
+    """Update a section"""
+    if not ObjectId.is_valid(portfolio_id):
+        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    if not ObjectId.is_valid(section_id):
+        raise HTTPException(status_code=400, detail="Invalid section ID")
+    
+    # Update section in portfolio
+    result = await db.portfolios.update_one(
+        {"_id": ObjectId(portfolio_id), "sections._id": ObjectId(section_id)},
+        {"$set": {
+            "sections.$.title": section.title,
+            "sections.$.description": section.description,
+            "sections.$.order": section.order,
+            "sections.$.updated_at": None  # Will be set by default_factory
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Portfolio or section not found")
+    
+    # Return updated section
+    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
+    for section_data in portfolio.get("sections", []):
+        if str(section_data["_id"]) == section_id:
+            return Section(**section_data)
+    
+    raise HTTPException(status_code=404, detail="Section not found")
+
+@router.delete("/portfolios/{portfolio_id}/sections/{section_id}")
+async def delete_section(portfolio_id: str, section_id: str, db=Depends(get_database)):
+    """Delete a section from a portfolio"""
+    if not ObjectId.is_valid(portfolio_id):
+        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    if not ObjectId.is_valid(section_id):
+        raise HTTPException(status_code=400, detail="Invalid section ID")
+    
+    # Check if portfolio exists
+    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    # Move items in this section to unsorted (remove section_id)
+    await db.portfolios.update_one(
+        {"_id": ObjectId(portfolio_id)},
+        {"$unset": {"items.$[elem].section_id": ""}},
+        array_filters=[{"elem.section_id": section_id}]  # Use string, not ObjectId
+    )
+    
+    # Remove section from portfolio
+    result = await db.portfolios.update_one(
+        {"_id": ObjectId(portfolio_id)},
+        {"$pull": {"sections": {"id": section_id}}}  # Use "id" field, not "_id"
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    return {"message": "Section deleted successfully"}

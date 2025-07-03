@@ -1,9 +1,11 @@
-from .portfolio import Portfolio, PortfolioCreate, PortfolioItem, PortfolioItemCreate, ItemMetadata
+from .portfolio import Portfolio, PortfolioCreate, PortfolioItem, PortfolioItemCreate, ItemMetadata, Section, SectionCreate
 
 __all__ = [
     "Portfolio",
     "PortfolioCreate", 
     "PortfolioItem",
     "PortfolioItemCreate",
-    "ItemMetadata"
+    "ItemMetadata",
+    "Section",
+    "SectionCreate"
 ]
