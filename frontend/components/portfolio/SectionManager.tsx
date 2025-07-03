@@ -50,10 +50,20 @@ export default function SectionManager() {
     
     if (confirm(`Are you sure you want to delete the section "${sectionName}"? This will also delete all items in this section. This action cannot be undone.`)) {
       try {
-        await api.deleteSection(currentPortfolio.id, sectionId);
+        // Delete from localStorage first
         deleteSection(sectionId);
+        
+        // Then delete from database
+        await api.deleteSection(currentPortfolio.id, sectionId);
+        
+        // Refresh from database to ensure consistency
+        const { refreshCurrentPortfolio } = usePortfolioStore.getState();
+        await refreshCurrentPortfolio();
       } catch (error) {
         console.error('Failed to delete section:', error);
+        // Refresh from database to restore correct state if deletion failed
+        const { refreshCurrentPortfolio } = usePortfolioStore.getState();
+        await refreshCurrentPortfolio();
         alert('Failed to delete section. Please try again.');
       }
     }

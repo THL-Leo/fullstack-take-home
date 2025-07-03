@@ -1,12 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import PortfolioView from '@/components/portfolio/PortfolioView';
+import { usePortfolioStore } from '@/store/portfolioStore';
 
 export default function Home() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { loadCompletePortfoliosFromDB } = usePortfolioStore();
+
+  // Load fresh complete data from database on app startup
+  useEffect(() => {
+    loadCompletePortfoliosFromDB();
+  }, [loadCompletePortfoliosFromDB]);
 
   const handlePortfolioChange = () => {
     // Trigger sidebar refresh by incrementing the counter

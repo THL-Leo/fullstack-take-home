@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Portfolio, Section, PortfolioItem, PortfolioCreate, SectionCreate } from '@/types/portfolio';
+import { api } from '@/lib/api';
 
 interface PortfolioStore {
   // State
@@ -26,6 +27,10 @@ interface PortfolioStore {
   updateItem: (id: string, updates: Partial<PortfolioItem>) => void;
   deleteItem: (id: string) => void;
   moveItem: (itemId: string, targetSectionId: string, newOrder: number) => void;
+  
+  // Database sync actions
+  loadCompletePortfoliosFromDB: () => Promise<void>;
+  refreshCurrentPortfolio: () => Promise<void>;
   
   // Utility actions
   setLoading: (loading: boolean) => void;
@@ -206,6 +211,51 @@ export const usePortfolioStore = create<PortfolioStore>()(
           )
         };
       }),
+
+      // Database sync actions
+      loadCompletePortfoliosFromDB: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          // Clear localStorage to start fresh
+          localStorage.removeItem('portfolio-storage');
+          
+          console.log('🔄 Loading fresh complete portfolios from database...');
+          
+          // Fetch all complete portfolios with items and sections
+          const completePortfolios = await api.getAllCompletePortfolios();
+          
+          console.log('✅ Loaded complete portfolios:', completePortfolios.length);
+          
+          set({ 
+            portfolios: completePortfolios, 
+            currentPortfolio: null, // Clear current portfolio to force fresh selection
+            isLoading: false 
+          });
+        } catch (error) {
+          console.error('Failed to load complete portfolios from database:', error);
+          set({ error: 'Failed to load portfolios', isLoading: false });
+        }
+      },
+
+      refreshCurrentPortfolio: async () => {
+        const { currentPortfolio } = get();
+        if (!currentPortfolio) return;
+        
+        set({ isLoading: true, error: null });
+        try {
+          const refreshedPortfolio = await api.getPortfolio(currentPortfolio.id);
+          set({ 
+            currentPortfolio: refreshedPortfolio,
+            portfolios: get().portfolios.map(p => 
+              p.id === refreshedPortfolio.id ? refreshedPortfolio : p
+            ),
+            isLoading: false 
+          });
+        } catch (error) {
+          console.error('Failed to refresh current portfolio:', error);
+          set({ error: 'Failed to refresh portfolio', isLoading: false });
+        }
+      },
 
       // Utility actions
       setLoading: (loading) => set({ isLoading: loading }),

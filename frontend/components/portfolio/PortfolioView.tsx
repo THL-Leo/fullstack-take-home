@@ -15,18 +15,37 @@ export default function PortfolioView() {
   const handleDeleteItem = async (itemId: string) => {
     if (!currentPortfolio) return;
     
+    // Debug and validate IDs
+    console.log('Delete item called with:', { itemId, portfolioId: currentPortfolio.id });
+    
+    if (!itemId || itemId === 'undefined') {
+      console.error('Invalid item ID:', itemId);
+      alert('Cannot delete item: Invalid item ID');
+      return;
+    }
+    
+    if (!currentPortfolio.id || currentPortfolio.id === 'undefined') {
+      console.error('Invalid portfolio ID:', currentPortfolio.id);
+      alert('Cannot delete item: Invalid portfolio ID');
+      return;
+    }
+    
     if (confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
       try {
-        await api.deletePortfolioItem(currentPortfolio.id, itemId);
-        // Update local store
+        // Delete from localStorage first
         deleteItem(itemId);
         
-        // Refresh portfolio data from server to ensure consistency
-        const refreshedPortfolio = await api.getPortfolio(currentPortfolio.id);
-        const { setCurrentPortfolio } = usePortfolioStore.getState();
-        setCurrentPortfolio(refreshedPortfolio);
+        // Then delete from database
+        await api.deletePortfolioItem(currentPortfolio.id, itemId);
+        
+        // Refresh from database to ensure consistency
+        const { refreshCurrentPortfolio } = usePortfolioStore.getState();
+        await refreshCurrentPortfolio();
       } catch (error) {
         console.error('Failed to delete item:', error);
+        // Refresh from database to restore correct state if deletion failed
+        const { refreshCurrentPortfolio } = usePortfolioStore.getState();
+        await refreshCurrentPortfolio();
         alert('Failed to delete item. Please try again.');
       }
     }
@@ -123,7 +142,7 @@ export default function PortfolioView() {
                   {sectionItems.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {sectionItems.map((item) => {
-                        console.log('Rendering item:', item.title, 'Type:', item.type);
+                        console.log('Rendering item:', { id: item.id, title: item.title, type: item.type, sectionId: item.sectionId });
                         return (
                         <div key={item.id} className="border rounded-lg overflow-hidden">
                           {/* Media Preview */}

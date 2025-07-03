@@ -10,15 +10,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ refreshTrigger }: SidebarProps) {
-  const { portfolios, currentPortfolio, setCurrentPortfolio, deletePortfolio } = usePortfolioStore();
-  const [allPortfolios, setAllPortfolios] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { portfolios, currentPortfolio, setCurrentPortfolio, deletePortfolio, isLoading } = usePortfolioStore();
   const [view, setView] = useState<'portfolios' | 'sections'>('portfolios');
-
-  // Load portfolios from server on mount and when refresh trigger changes
-  useEffect(() => {
-    loadPortfolios();
-  }, [refreshTrigger]);
 
   // Reset view to portfolios when current portfolio is cleared
   useEffect(() => {
@@ -27,33 +20,24 @@ export default function Sidebar({ refreshTrigger }: SidebarProps) {
     }
   }, [currentPortfolio]);
 
-  const loadPortfolios = async () => {
-    try {
-      setLoading(true);
-      const serverPortfolios = await api.listPortfolios();
-      setAllPortfolios(serverPortfolios);
-    } catch (error) {
-      console.error('Failed to load portfolios:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSelectPortfolio = async (portfolioId: string) => {
-    try {
-      const portfolio = await api.getPortfolio(portfolioId);
+  const handleSelectPortfolio = (portfolioId: string) => {
+    // Find the portfolio in our already-loaded complete portfolios
+    const portfolio = portfolios.find(p => p.id === portfolioId);
+    
+    if (portfolio) {
+      console.log('📁 Selected portfolio:', portfolio.title, 'with', portfolio.items.length, 'items');
       setCurrentPortfolio(portfolio);
       setView('sections');
-    } catch (error) {
-      console.error('Failed to load portfolio:', error);
-      alert('Failed to load portfolio. Please try again.');
+    } else {
+      console.error('Portfolio not found in loaded portfolios:', portfolioId);
+      alert('Portfolio not found. Please try refreshing the page.');
     }
   };
 
   const handleDeletePortfolio = async (portfolioId: string, portfolioTitle: string) => {
     if (confirm(`Are you sure you want to delete "${portfolioTitle}"? This will delete all sections, items, and files. This action cannot be undone.`)) {
       try {
-        await api.deletePortfolio(portfolioId);
+        // Delete from localStorage first
         deletePortfolio(portfolioId);
         
         // If we deleted the current portfolio, clear it
@@ -62,10 +46,17 @@ export default function Sidebar({ refreshTrigger }: SidebarProps) {
           setView('portfolios');
         }
         
-        // Refresh the portfolio list
-        await loadPortfolios();
+        // Then delete from database
+        await api.deletePortfolio(portfolioId);
+        
+        // Refresh from database to ensure consistency
+        const { loadCompletePortfoliosFromDB } = usePortfolioStore.getState();
+        await loadCompletePortfoliosFromDB();
       } catch (error) {
         console.error('Failed to delete portfolio:', error);
+        // Refresh from database to restore correct state if deletion failed
+        const { loadCompletePortfoliosFromDB } = usePortfolioStore.getState();
+        await loadCompletePortfoliosFromDB();
         alert('Failed to delete portfolio. Please try again.');
       }
     }
@@ -83,13 +74,13 @@ export default function Sidebar({ refreshTrigger }: SidebarProps) {
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-3">My Portfolios</h3>
             
-            {loading ? (
+            {isLoading ? (
               <div className="text-center py-4">
                 <div className="text-gray-500">Loading portfolios...</div>
               </div>
-            ) : allPortfolios.length > 0 ? (
+            ) : portfolios.length > 0 ? (
               <div className="space-y-2">
-                {allPortfolios.map((portfolio) => (
+                {portfolios.map((portfolio) => (
                   <div 
                     key={portfolio.id} 
                     className={`border rounded-lg p-3 cursor-pointer transition-colors ${
@@ -108,7 +99,7 @@ export default function Sidebar({ refreshTrigger }: SidebarProps) {
                           <p className="text-sm text-gray-600 mt-1">{portfolio.description}</p>
                         )}
                         <p className="text-xs text-gray-500 mt-1">
-                          Created {new Date(portfolio.created_at).toLocaleDateString()}
+                          Created {new Date(portfolio.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <button
