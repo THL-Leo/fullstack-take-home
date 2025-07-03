@@ -31,7 +31,6 @@ export default function Header({ onPortfolioChange }: HeaderProps) {
       const portfolioData = {
         ...newPortfolio,
         id: newPortfolio._id || newPortfolio.id,
-        sections: [],
         items: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -56,7 +55,7 @@ export default function Header({ onPortfolioChange }: HeaderProps) {
   const handleDeletePortfolio = async () => {
     if (!currentPortfolio) return;
     
-    if (confirm(`Are you sure you want to delete "${currentPortfolio.title}"? This will delete all sections, items, and files. This action cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete "${currentPortfolio.title}"? This will delete all items and files. This action cannot be undone.`)) {
       try {
         await api.deletePortfolio(currentPortfolio.id);
         deletePortfolio(currentPortfolio.id);

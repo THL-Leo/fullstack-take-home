@@ -9,8 +9,8 @@ import Button from '@/components/ui/Button';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function PortfolioView() {
-  const [activeUploadSection, setActiveUploadSection] = useState<string | null>(null);
-  const { currentPortfolio, toggleSection, deleteItem } = usePortfolioStore();
+  const [isUploading, setIsUploading] = useState(false);
+  const { currentPortfolio, deleteItem } = usePortfolioStore();
 
   const handleDeleteItem = async (itemId: string) => {
     if (!currentPortfolio) return;
@@ -61,11 +61,7 @@ export default function PortfolioView() {
     );
   }
 
-  const getItemsForSection = (sectionId: string) => {
-    return currentPortfolio.items
-      .filter(item => item.sectionId === sectionId)
-      .sort((a, b) => a.order - b.order);
-  };
+  const sortedItems = currentPortfolio?.items?.sort((a, b) => a.order - b.order) || [];
 
   return (
     <div className="space-y-6">
@@ -77,164 +73,118 @@ export default function PortfolioView() {
               <p className="text-gray-600 mt-1">{currentPortfolio.description}</p>
             )}
           </div>
-          <div className="text-sm text-gray-500">
-            {currentPortfolio.sections.length} sections • {currentPortfolio.items.length} items
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-gray-500">
+              {currentPortfolio.items.length} items
+            </div>
+            <Button
+              onClick={() => setIsUploading(!isUploading)}
+              size="sm"
+            >
+              {isUploading ? 'Cancel Upload' : 'Add Items'}
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Sections */}
-      <div className="space-y-4">
-        {currentPortfolio.sections.map((section) => {
-          const sectionItems = getItemsForSection(section.id);
-          const isUploading = activeUploadSection === section.id;
+      {/* Upload Component */}
+      {isUploading && (
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Upload New Items</h3>
+          <FileUpload
+            onSuccess={() => setIsUploading(false)}
+          />
+        </div>
+      )}
 
-          return (
-            <div key={section.id} className="bg-white rounded-lg shadow-sm border">
-              {/* Section Header */}
-              <div className="p-4 border-b">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={() => toggleSection(section.id)}
-                      className="text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                      {section.isExpanded ? '▼' : '▶'}
-                    </button>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{section.name}</h3>
-                      {section.description && (
-                        <p className="text-sm text-gray-600">{section.description}</p>
+      {/* Items Grid */}
+      {sortedItems.length > 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Portfolio Items</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {sortedItems.map((item) => {
+              console.log('Rendering item:', { id: item.id, title: item.title, type: item.type });
+              return (
+              <div key={item.id} className="border rounded-lg overflow-hidden">
+                {/* Media Preview */}
+                <div className="aspect-video bg-gray-100 flex items-center justify-center">
+                  {item.type === 'image' ? (
+                    <img
+                      src={item.url.startsWith('http') ? item.url : `${API_BASE_URL}${item.url}`}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const fallbackSrc = `${API_BASE_URL}/uploads/${item.filename}`;
+                        console.error('Image failed to load:', e.currentTarget.src);
+                        console.error('Trying fallback:', fallbackSrc);
+                        console.error('Item data:', item);
+                        e.currentTarget.src = fallbackSrc;
+                      }}
+                      onLoad={() => {
+                        console.log('Image loaded successfully!');
+                      }}
+                    />
+                  ) : (
+                    <div className="relative w-full h-full">
+                      {item.thumbnailBase64 ? (
+                        <img
+                          src={`data:image/jpeg;base64,${item.thumbnailBase64}`}
+                          alt={`${item.title} thumbnail`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-center flex items-center justify-center h-full">
+                          <div>
+                            <div className="text-4xl mb-2">🎥</div>
+                            <p className="text-sm text-gray-600">Video File</p>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">
-                      {sectionItems.length} items
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setActiveUploadSection(
-                        isUploading ? null : section.id
-                      )}
+                  )}
+                </div>
+
+                {/* Item Info */}
+                <div className="p-3">
+                  <div className="flex items-start justify-between mb-1">
+                    <h4 className="font-medium text-gray-900 flex-1">{item.title}</h4>
+                    <button
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="text-red-500 hover:text-red-700 transition-colors ml-2 p-1"
+                      title="Delete item"
                     >
-                      {isUploading ? 'Cancel' : 'Add Item'}
-                    </Button>
+                      🗑️
+                    </button>
+                  </div>
+                  {item.description && (
+                    <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                  )}
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>{item.originalName}</span>
+                    <span>
+                      {item.metadata.dimensions && 
+                        `${item.metadata.dimensions.width}×${item.metadata.dimensions.height}`
+                      }
+                    </span>
                   </div>
                 </div>
               </div>
-
-              {/* Section Content */}
-              {section.isExpanded && (
-                <div className="p-4">
-                  {/* Upload Component */}
-                  {isUploading && (
-                    <div className="mb-6">
-                      <FileUpload
-                        sectionId={section.id}
-                        onSuccess={() => setActiveUploadSection(null)}
-                      />
-                    </div>
-                  )}
-
-                  {/* Items Grid */}
-                  {sectionItems.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {sectionItems.map((item) => {
-                        console.log('Rendering item:', { id: item.id, title: item.title, type: item.type, sectionId: item.sectionId });
-                        return (
-                        <div key={item.id} className="border rounded-lg overflow-hidden">
-                          {/* Media Preview */}
-                          <div className="aspect-video bg-gray-100 flex items-center justify-center">
-                            {item.type === 'image' ? (
-                              <img
-                                src={item.url.startsWith('http') ? item.url : `${API_BASE_URL}${item.url}`}
-                                alt={item.title}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const fallbackSrc = `${API_BASE_URL}/uploads/${item.filename}`;
-                                  console.error('Image failed to load:', e.currentTarget.src);
-                                  console.error('Trying fallback:', fallbackSrc);
-                                  console.error('Item data:', item);
-                                  e.currentTarget.src = fallbackSrc;
-                                }}
-                                onLoad={() => {
-                                  console.log('Image loaded successfully!');
-                                }}
-                              />
-                            ) : (
-                              <div className="relative w-full h-full">
-                                {item.thumbnailUrl ? (
-                                  <img
-                                    src={`${API_BASE_URL}${item.thumbnailUrl}`}
-                                    alt={`${item.title} thumbnail`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="text-center flex items-center justify-center h-full">
-                                    <div>
-                                      <div className="text-4xl mb-2">🎥</div>
-                                      <p className="text-sm text-gray-600">Video File</p>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Item Info */}
-                          <div className="p-3">
-                            <div className="flex items-start justify-between mb-1">
-                              <h4 className="font-medium text-gray-900 flex-1">{item.title}</h4>
-                              <button
-                                onClick={() => handleDeleteItem(item.id)}
-                                className="text-red-500 hover:text-red-700 transition-colors ml-2 p-1"
-                                title="Delete item"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                            {item.description && (
-                              <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                            )}
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>{item.originalName}</span>
-                              <span>
-                                {item.metadata.dimensions && 
-                                  `${item.metadata.dimensions.width}×${item.metadata.dimensions.height}`
-                                }
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        );
-                      })}
-                    </div>
-                  ) : !isUploading ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <div className="text-3xl mb-2">📷</div>
-                      <p>No items in this section yet.</p>
-                      <p className="text-sm">Click "Add Item" to upload your first file.</p>
-                    </div>
-                  ) : null}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Empty State */}
-        {currentPortfolio.sections.length === 0 && (
-          <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-            <div className="text-6xl mb-4">📁</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Sections Yet</h3>
-            <p className="text-gray-600 mb-4">
-              Create sections to organize your portfolio items by category or theme.
-            </p>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      ) : !isUploading ? (
+        <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+          <div className="text-6xl mb-4">📷</div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Items Yet</h3>
+          <p className="text-gray-600 mb-4">
+            Upload your first images or videos to start building your portfolio.
+          </p>
+          <Button onClick={() => setIsUploading(true)}>
+            Add Your First Item
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -9,7 +9,6 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
 interface FileUploadProps {
-  sectionId: string;
   onSuccess?: () => void;
 }
 
@@ -18,19 +17,74 @@ interface UploadFormData {
   description: string;
 }
 
-export default function FileUpload({ sectionId, onSuccess }: FileUploadProps) {
+// Supported formats (constants)
+const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+const SUPPORTED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/mpeg'];
+const SUPPORTED_IMAGE_EXTENSIONS = ['.jpeg', '.jpg', '.png', '.webp'];
+const SUPPORTED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi', '.mpeg', '.mpg'];
+
+export default function FileUpload({ onSuccess }: FileUploadProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [uploadedData, setUploadedData] = useState<any>(null);
+  const [uploadedData, setUploadedData] = useState<{filename: string; original_name: string; url: string; metadata: {size: number; dimensions?: {width: number; height: number}; duration?: number; format: string}; thumbnail_base64?: string} | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [detectedFileType, setDetectedFileType] = useState<'image' | 'video' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const { currentPortfolio, addItem } = usePortfolioStore();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<UploadFormData>();
 
+  // Reset all states
+  const resetUploadState = () => {
+    setUploadedFile(null);
+    setUploadedData(null);
+    setDetectedFileType(null);
+    setError(null);
+    setIsSuccess(false);
+    setUploadProgress(0);
+    setIsUploading(false);
+    reset();
+  };
+
+  // Validate file format client-side
+  const validateFileFormat = useCallback((file: File): string | null => {
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const mimeType = file.type.toLowerCase();
+    
+    // Check if it's a supported image
+    if (mimeType.startsWith('image/')) {
+      if (!SUPPORTED_IMAGE_TYPES.includes(mimeType) && !SUPPORTED_IMAGE_EXTENSIONS.includes(fileExtension)) {
+        return `Unsupported image format. Supported formats: JPEG, PNG, WebP. You uploaded: ${file.name}`;
+      }
+      return null;
+    }
+    
+    // Check if it's a supported video
+    if (mimeType.startsWith('video/') || SUPPORTED_VIDEO_EXTENSIONS.includes(fileExtension)) {
+      if (!SUPPORTED_VIDEO_TYPES.includes(mimeType) && !SUPPORTED_VIDEO_EXTENSIONS.includes(fileExtension)) {
+        return `Unsupported video format. Supported formats: MP4, WebM, MOV, AVI, MPEG. You uploaded: ${file.name}`;
+      }
+      return null;
+    }
+    
+    return `File type not supported. Please upload an image (JPEG, PNG, WebP) or video (MP4, WebM, MOV, AVI, MPEG). You uploaded: ${file.name}`;
+  }, []);
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
+
+    // Reset any previous errors
+    setError(null);
+    setIsSuccess(false);
+
+    // Validate file format client-side first
+    const validationError = validateFileFormat(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     setUploadedFile(file);
     setIsUploading(true);
@@ -40,25 +94,59 @@ export default function FileUpload({ sectionId, onSuccess }: FileUploadProps) {
       const fileType = file.type.startsWith('image/') ? 'image' : 'video';
       console.log('Uploading file:', file.name, 'Detected type:', fileType, 'MIME type:', file.type);
       setDetectedFileType(fileType);
+      
       const result = await api.uploadFile(file, fileType);
       setUploadedData(result);
       setUploadProgress(100);
-    } catch (error) {
+      setIsSuccess(true);
+    } catch (error: unknown) {
       console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
+      
+      // Extract error message from response
+      let errorMessage = 'Upload failed. Please try again.';
+      if (error && typeof error === 'object' && 'response' in error) {
+        const responseError = error as { response?: { data?: { detail?: string } } };
+        if (responseError.response?.data?.detail) {
+          errorMessage = responseError.response.data.detail;
+        }
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        const messageError = error as { message: string };
+        errorMessage = messageError.message;
+      }
+      
+      setError(errorMessage);
+      
+      // Reset upload state on error
+      setUploadedFile(null);
+      setUploadedData(null);
+      setDetectedFileType(null);
+      setUploadProgress(0);
     } finally {
       setIsUploading(false);
     }
-  }, []);
+  }, [validateFileFormat]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp'],
-      'video/*': ['.mp4', '.webm', '.mov', '.avi', '.mpeg', '.mpg']
+      'image/jpeg': ['.jpeg', '.jpg'],
+      'image/png': ['.png'],
+      'image/webp': ['.webp'],
+      'video/mp4': ['.mp4'],
+      'video/webm': ['.webm'],
+      'video/quicktime': ['.mov'],
+      'video/x-msvideo': ['.avi'],
+      'video/mpeg': ['.mpeg', '.mpg']
     },
     maxFiles: 1,
-    maxSize: 50 * 1024 * 1024 // 50MB
+    maxSize: 50 * 1024 * 1024, // 50MB
+    onDropRejected: (rejectedFiles) => {
+      const file = rejectedFiles[0];
+      if (file) {
+        const errors = file.errors.map(e => e.message).join(', ');
+        setError(`File rejected: ${errors}. File: ${file.file.name}`);
+      }
+    }
   });
 
   const onSubmit = async (data: UploadFormData) => {
@@ -75,8 +163,8 @@ export default function FileUpload({ sectionId, onSuccess }: FileUploadProps) {
         title: data.title,
         description: data.description,
         metadata: uploadedData.metadata,
-        section_id: sectionId,
-        order: 0
+        thumbnail_base64: uploadedData.thumbnail_base64,
+        order: currentPortfolio.items.length
       };
 
       const newItem = await api.createPortfolioItem(currentPortfolio.id, itemData);
@@ -85,17 +173,13 @@ export default function FileUpload({ sectionId, onSuccess }: FileUploadProps) {
         ...newItem,
         id: newItem._id || newItem.id,
         originalName: newItem.original_name,
-        sectionId: newItem.section_id,
-        thumbnailUrl: uploadedData.thumbnail_url,
+        thumbnailBase64: uploadedData.thumbnail_base64,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
 
       // Reset form
-      setUploadedFile(null);
-      setUploadedData(null);
-      setDetectedFileType(null);
-      reset();
+      resetUploadState();
       
       if (onSuccess) onSuccess();
     } catch (error) {
@@ -106,7 +190,39 @@ export default function FileUpload({ sectionId, onSuccess }: FileUploadProps) {
 
   return (
     <div className="space-y-4">
-      {!uploadedFile ? (
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start space-x-2">
+            <div className="text-red-500 text-lg">⚠️</div>
+            <div>
+              <h4 className="text-red-800 font-medium text-sm">Upload Error</h4>
+              <p className="text-red-700 text-sm mt-1">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-600 hover:text-red-800 text-sm underline mt-2"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Display */}
+      {isSuccess && uploadedData && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-start space-x-2">
+            <div className="text-green-500 text-lg">✅</div>
+            <div>
+              <h4 className="text-green-800 font-medium text-sm">Upload Successful</h4>
+              <p className="text-green-700 text-sm mt-1">File uploaded successfully. Please fill in the details below.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!uploadedFile && !error ? (
         <div
           {...getRootProps()}
           className={`
@@ -126,13 +242,16 @@ export default function FileUpload({ sectionId, onSuccess }: FileUploadProps) {
               <div>
                 <p className="text-gray-600">Drag & drop a file here, or click to select</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Supports: Images (JPEG, PNG, WebP) up to 10MB, Videos (MP4, WebM) up to 50MB
+                  Supports: Images (JPEG, PNG, WebP) up to 10MB, Videos (MP4, WebM, MOV, AVI, MPEG) up to 50MB
+                </p>
+                <p className="text-xs text-red-500 mt-1">
+                  ⚠️ HEIC, GIF, and other formats are not supported
                 </p>
               </div>
             )}
           </div>
         </div>
-      ) : (
+      ) : uploadedFile ? (
         <div className="space-y-4">
           {/* File Preview */}
           <div className="border rounded-lg p-4 bg-gray-50">
@@ -192,11 +311,7 @@ export default function FileUpload({ sectionId, onSuccess }: FileUploadProps) {
                 <Button 
                   type="button" 
                   variant="outline"
-                  onClick={() => {
-                    setUploadedFile(null);
-                    setUploadedData(null);
-                    reset();
-                  }}
+                  onClick={resetUploadState}
                 >
                   Cancel
                 </Button>
@@ -204,7 +319,7 @@ export default function FileUpload({ sectionId, onSuccess }: FileUploadProps) {
             </form>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

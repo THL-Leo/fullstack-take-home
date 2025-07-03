@@ -9,7 +9,6 @@ dependencies = [
     "fastapi>=0.115.14",
     "ffmpeg-python>=0.2.0",
     "motor>=3.7.1",
-    "opencv-python>=4.11.0.86",
     "pillow>=11.3.0",
     "pydantic>=2.11.7",
     "python-dotenv>=1.1.1",

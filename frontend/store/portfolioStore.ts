@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Portfolio, Section, PortfolioItem, PortfolioCreate, SectionCreate } from '@/types/portfolio';
+import { Portfolio, PortfolioItem, PortfolioCreate } from '@/types/portfolio';
 import { api } from '@/lib/api';
 
 interface PortfolioStore {
@@ -16,17 +16,11 @@ interface PortfolioStore {
   updatePortfolio: (id: string, updates: Partial<Portfolio>) => void;
   deletePortfolio: (id: string) => void;
   
-  // Section actions
-  addSection: (section: Section) => void;
-  updateSection: (id: string, updates: Partial<Section>) => void;
-  deleteSection: (id: string) => void;
-  toggleSection: (id: string) => void;
-  
   // Item actions
   addItem: (item: PortfolioItem) => void;
   updateItem: (id: string, updates: Partial<PortfolioItem>) => void;
   deleteItem: (id: string) => void;
-  moveItem: (itemId: string, targetSectionId: string, newOrder: number) => void;
+  reorderItem: (itemId: string, newOrder: number) => void;
   
   // Database sync actions
   loadCompletePortfoliosFromDB: () => Promise<void>;
@@ -70,76 +64,6 @@ export const usePortfolioStore = create<PortfolioStore>()(
           ? null 
           : state.currentPortfolio
       })),
-
-      // Section actions
-      addSection: (section) => set((state) => {
-        if (!state.currentPortfolio) return state;
-        
-        const updatedPortfolio = {
-          ...state.currentPortfolio,
-          sections: [...state.currentPortfolio.sections, section]
-        };
-        
-        return {
-          currentPortfolio: updatedPortfolio,
-          portfolios: state.portfolios.map(p => 
-            p.id === updatedPortfolio.id ? updatedPortfolio : p
-          )
-        };
-      }),
-      
-      updateSection: (id, updates) => set((state) => {
-        if (!state.currentPortfolio) return state;
-        
-        const updatedPortfolio = {
-          ...state.currentPortfolio,
-          sections: state.currentPortfolio.sections.map(s => 
-            s.id === id ? { ...s, ...updates } : s
-          )
-        };
-        
-        return {
-          currentPortfolio: updatedPortfolio,
-          portfolios: state.portfolios.map(p => 
-            p.id === updatedPortfolio.id ? updatedPortfolio : p
-          )
-        };
-      }),
-      
-      deleteSection: (id) => set((state) => {
-        if (!state.currentPortfolio) return state;
-        
-        const updatedPortfolio = {
-          ...state.currentPortfolio,
-          sections: state.currentPortfolio.sections.filter(s => s.id !== id),
-          items: state.currentPortfolio.items.filter(i => i.sectionId !== id)
-        };
-        
-        return {
-          currentPortfolio: updatedPortfolio,
-          portfolios: state.portfolios.map(p => 
-            p.id === updatedPortfolio.id ? updatedPortfolio : p
-          )
-        };
-      }),
-      
-      toggleSection: (id) => set((state) => {
-        if (!state.currentPortfolio) return state;
-        
-        const updatedPortfolio = {
-          ...state.currentPortfolio,
-          sections: state.currentPortfolio.sections.map(s => 
-            s.id === id ? { ...s, isExpanded: !s.isExpanded } : s
-          )
-        };
-        
-        return {
-          currentPortfolio: updatedPortfolio,
-          portfolios: state.portfolios.map(p => 
-            p.id === updatedPortfolio.id ? updatedPortfolio : p
-          )
-        };
-      }),
 
       // Item actions
       addItem: (item) => set((state) => {
@@ -192,14 +116,14 @@ export const usePortfolioStore = create<PortfolioStore>()(
         };
       }),
       
-      moveItem: (itemId, targetSectionId, newOrder) => set((state) => {
+      reorderItem: (itemId, newOrder) => set((state) => {
         if (!state.currentPortfolio) return state;
         
         const updatedPortfolio = {
           ...state.currentPortfolio,
           items: state.currentPortfolio.items.map(i => 
             i.id === itemId 
-              ? { ...i, sectionId: targetSectionId, order: newOrder }
+              ? { ...i, order: newOrder }
               : i
           )
         };
@@ -227,7 +151,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
           console.log('✅ Loaded complete portfolios:', completePortfolios.length);
           
           set({ 
-            portfolios: completePortfolios, 
+            portfolios: completePortfolios.filter((p): p is Portfolio => p !== null), 
             currentPortfolio: null, // Clear current portfolio to force fresh selection
             isLoading: false 
           });
@@ -243,7 +167,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
         
         set({ isLoading: true, error: null });
         try {
-          const refreshedPortfolio = await api.getPortfolio(currentPortfolio.id);
+          const refreshedPortfolio = await api.getPortfolio(currentPortfolio.id) as Portfolio;
           set({ 
             currentPortfolio: refreshedPortfolio,
             portfolios: get().portfolios.map(p => 

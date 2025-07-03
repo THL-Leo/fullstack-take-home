@@ -1,24 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { usePortfolioStore } from '@/store/portfolioStore';
 import { api } from '@/lib/api';
-import SectionManager from '@/components/portfolio/SectionManager';
 
-interface SidebarProps {
-  refreshTrigger?: number;
-}
-
-export default function Sidebar({ refreshTrigger }: SidebarProps) {
+export default function Sidebar() {
   const { portfolios, currentPortfolio, setCurrentPortfolio, deletePortfolio, isLoading } = usePortfolioStore();
-  const [view, setView] = useState<'portfolios' | 'sections'>('portfolios');
 
-  // Reset view to portfolios when current portfolio is cleared
-  useEffect(() => {
-    if (!currentPortfolio) {
-      setView('portfolios');
-    }
-  }, [currentPortfolio]);
 
   const handleSelectPortfolio = (portfolioId: string) => {
     // Find the portfolio in our already-loaded complete portfolios
@@ -27,7 +15,6 @@ export default function Sidebar({ refreshTrigger }: SidebarProps) {
     if (portfolio) {
       console.log('📁 Selected portfolio:', portfolio.title, 'with', portfolio.items.length, 'items');
       setCurrentPortfolio(portfolio);
-      setView('sections');
     } else {
       console.error('Portfolio not found in loaded portfolios:', portfolioId);
       alert('Portfolio not found. Please try refreshing the page.');
@@ -43,7 +30,6 @@ export default function Sidebar({ refreshTrigger }: SidebarProps) {
         // If we deleted the current portfolio, clear it
         if (currentPortfolio?.id === portfolioId) {
           setCurrentPortfolio(null);
-          setView('portfolios');
         }
         
         // Then delete from database
@@ -62,93 +48,69 @@ export default function Sidebar({ refreshTrigger }: SidebarProps) {
     }
   };
 
-  const handleBackToPortfolios = () => {
-    setView('portfolios');
-  };
 
   return (
     <div className="w-80 bg-gray-50 border-r border-gray-200 h-full overflow-y-auto">
       <div className="p-4 space-y-6">
-        {view === 'portfolios' ? (
-          /* Portfolio List View */
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-3">My Portfolios</h3>
-            
-            {isLoading ? (
-              <div className="text-center py-4">
-                <div className="text-gray-500">Loading portfolios...</div>
-              </div>
-            ) : portfolios.length > 0 ? (
-              <div className="space-y-2">
-                {portfolios.map((portfolio) => (
-                  <div 
-                    key={portfolio.id} 
-                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                      currentPortfolio?.id === portfolio.id 
-                        ? 'bg-blue-50 border-blue-200' 
-                        : 'bg-white hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div 
-                        className="flex-1"
-                        onClick={() => handleSelectPortfolio(portfolio.id)}
-                      >
-                        <h4 className="font-medium text-gray-900">{portfolio.title}</h4>
-                        {portfolio.description && (
-                          <p className="text-sm text-gray-600 mt-1">{portfolio.description}</p>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 mb-3">My Portfolios</h3>
+          
+          {isLoading ? (
+            <div className="text-center py-4">
+              <div className="text-gray-500">Loading portfolios...</div>
+            </div>
+          ) : portfolios.length > 0 ? (
+            <div className="space-y-2">
+              {portfolios.map((portfolio) => (
+                <div 
+                  key={portfolio.id} 
+                  className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                    currentPortfolio?.id === portfolio.id 
+                      ? 'bg-blue-50 border-blue-200' 
+                      : 'bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div 
+                      className="flex-1"
+                      onClick={() => handleSelectPortfolio(portfolio.id)}
+                    >
+                      <h4 className="font-medium text-gray-900">{portfolio.title}</h4>
+                      {portfolio.description && (
+                        <p className="text-sm text-gray-600 mt-1">{portfolio.description}</p>
+                      )}
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-xs text-gray-500">
                           Created {new Date(portfolio.createdAt).toLocaleDateString()}
                         </p>
+                        <p className="text-xs text-gray-500">
+                          {portfolio.items?.length || 0} items
+                        </p>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePortfolio(portfolio.id, portfolio.title);
-                        }}
-                        className="text-red-500 hover:text-red-700 transition-colors p-1 ml-2"
-                        title="Delete portfolio"
-                      >
-                        🗑️
-                      </button>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeletePortfolio(portfolio.id, portfolio.title);
+                      }}
+                      className="text-red-500 hover:text-red-700 transition-colors p-1 ml-2"
+                      title="Delete portfolio"
+                    >
+                      🗑️
+                    </button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-2">📋</div>
-                <p className="text-gray-600 text-sm">
-                  No portfolios yet. Create your first portfolio to get started!
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Section Management View */
-          <div>
-            <div className="flex items-center mb-4">
-              <button
-                onClick={handleBackToPortfolios}
-                className="text-blue-600 hover:text-blue-800 flex items-center text-sm font-medium"
-              >
-                ← Back to Portfolios
-              </button>
+                </div>
+              ))}
             </div>
-            
-            {currentPortfolio && (
-              <div className="mb-4">
-                <h3 className="text-lg font-medium text-gray-900">{currentPortfolio.title}</h3>
-                {currentPortfolio.description && (
-                  <p className="text-sm text-gray-600">{currentPortfolio.description}</p>
-                )}
-              </div>
-            )}
-            
-            <SectionManager />
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-2">📋</div>
+              <p className="text-gray-600 text-sm">
+                No portfolios yet. Create your first portfolio to get started!
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

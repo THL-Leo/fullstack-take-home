@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from bson import ObjectId
 
-from app.models import Portfolio, PortfolioCreate, Section, SectionCreate, PortfolioItem, PortfolioItemCreate
+from app.models import Portfolio, PortfolioCreate, PortfolioItem, PortfolioItemCreate
 from app.database import get_database
 
 router = APIRouter()
@@ -11,7 +11,6 @@ router = APIRouter()
 async def create_portfolio(portfolio: PortfolioCreate, db=Depends(get_database)):
     """Create a new portfolio"""
     portfolio_dict = portfolio.dict()
-    portfolio_dict["sections"] = []
     portfolio_dict["items"] = []
     
     result = await db.portfolios.insert_one(portfolio_dict)
@@ -51,29 +50,6 @@ async def update_portfolio(portfolio_id: str, portfolio: PortfolioCreate, db=Dep
     updated_portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
     return Portfolio(**updated_portfolio)
 
-@router.post("/portfolios/{portfolio_id}/sections", response_model=Section)
-async def create_section(portfolio_id: str, section: SectionCreate, db=Depends(get_database)):
-    """Add a section to a portfolio"""
-    if not ObjectId.is_valid(portfolio_id):
-        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
-    
-    # Check if portfolio exists
-    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    
-    # Create section
-    section_dict = section.dict()
-    section_dict["_id"] = ObjectId()
-    new_section = Section(**section_dict)
-    
-    # Add to portfolio
-    await db.portfolios.update_one(
-        {"_id": ObjectId(portfolio_id)},
-        {"$push": {"sections": new_section.dict()}}
-    )
-    
-    return new_section
 
 @router.post("/portfolios/{portfolio_id}/items", response_model=PortfolioItem)
 async def create_portfolio_item(portfolio_id: str, item: dict, db=Depends(get_database)):
@@ -218,56 +194,6 @@ async def delete_portfolio(portfolio_id: str, db=Depends(get_database)):
     
     return {"message": "Portfolio deleted successfully"}
 
-@router.delete("/portfolios/{portfolio_id}/sections/{section_id}")
-async def delete_section(portfolio_id: str, section_id: str, db=Depends(get_database)):
-    """Delete a section and all its items"""
-    if not ObjectId.is_valid(portfolio_id):
-        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
-    
-    if not ObjectId.is_valid(section_id):
-        raise HTTPException(status_code=400, detail="Invalid section ID")
-    
-    # Find the portfolio
-    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    
-    # Find items in this section and delete their files
-    import os
-    try:
-        for item in portfolio.get("items", []):
-            if item.get("section_id") == section_id:
-                # Delete main file
-                if item.get("filename"):
-                    file_path = os.path.join("uploads", item["filename"])
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                
-                # Delete thumbnail if it exists
-                if item.get("thumbnail_url"):
-                    thumbnail_filename = item["thumbnail_url"].replace("/uploads/", "")
-                    thumbnail_path = os.path.join("uploads", thumbnail_filename)
-                    if os.path.exists(thumbnail_path):
-                        os.remove(thumbnail_path)
-                        
-    except Exception as e:
-        print(f"Warning: Failed to delete some files: {e}")
-    
-    # Remove section and its items from portfolio
-    result = await db.portfolios.update_one(
-        {"_id": ObjectId(portfolio_id)},
-        {
-            "$pull": {
-                "sections": {"$or": [{"_id": ObjectId(section_id)}, {"id": ObjectId(section_id)}]},
-                "items": {"section_id": section_id}
-            }
-        }
-    )
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    
-    return {"message": "Section deleted successfully"}
 
 @router.get("/portfolios")
 async def list_portfolios(db=Depends(get_database)):

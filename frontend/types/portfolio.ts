@@ -12,20 +12,10 @@ export interface PortfolioItem {
   originalName: string;
   url: string;
   thumbnailUrl?: string;
+  thumbnailBase64?: string;
   title: string;
   description: string;
   metadata: ItemMetadata;
-  sectionId: string;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Section {
-  id: string;
-  name: string;
-  description?: string;
-  isExpanded: boolean;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -35,7 +25,6 @@ export interface Portfolio {
   id: string;
   title: string;
   description?: string;
-  sections: Section[];
   items: PortfolioItem[];
   createdAt: string;
   updatedAt: string;
@@ -46,18 +35,11 @@ export interface PortfolioCreate {
   description?: string;
 }
 
-export interface SectionCreate {
-  name: string;
-  description?: string;
-  order: number;
-}
-
 export interface PortfolioItemCreate {
   type: 'image' | 'video';
   filename: string;
   originalName: string;
   title: string;
   description: string;
-  sectionId: string;
   order: number;
 }

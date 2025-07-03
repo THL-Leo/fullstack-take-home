@@ -42,7 +42,6 @@ class PortfolioItemCreate(BaseModel):
     original_name: str
     title: str
     description: str = ""
-    section_id: str
     order: int = 0
 
 class PortfolioItem(BaseModel):
@@ -52,29 +51,10 @@ class PortfolioItem(BaseModel):
     original_name: str
     url: str
     thumbnail_url: Optional[str] = None
+    thumbnail_base64: Optional[str] = None
     title: str
     description: str = ""
     metadata: ItemMetadata
-    section_id: str
-    order: int = 0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-
-class SectionCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    order: int = 0
-
-class Section(BaseModel):
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
-    name: str
-    description: Optional[str] = None
-    is_expanded: bool = True
     order: int = 0
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -92,7 +72,6 @@ class Portfolio(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
     title: str
     description: Optional[str] = None
-    sections: List[Section] = []
     items: List[PortfolioItem] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
