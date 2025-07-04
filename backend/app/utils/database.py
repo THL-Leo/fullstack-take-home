@@ -140,12 +140,29 @@ async def remove_item_from_portfolio(db: AsyncIOMotorDatabase, portfolio_id: str
     portfolio_obj_id = validate_object_id(portfolio_id)
     item_obj_id = validate_object_id(item_id)
     
+    print(f"🗑️ remove_item_from_portfolio: portfolio_id={portfolio_id}, item_id={item_id}")
+    print(f"   ObjectId conversion: {item_obj_id}")
+    
+    # Try to remove by _id field (ObjectId)
     result = await db.portfolios.update_one(
         {"_id": portfolio_obj_id},
         {"$pull": {"items": {"_id": item_obj_id}}}
     )
     
-    return result.modified_count > 0
+    print(f"📊 Remove by _id result: matched={result.matched_count}, modified={result.modified_count}")
+    
+    # If that didn't work, try to remove by id field (string)
+    if result.modified_count == 0:
+        print(f"🔄 Trying to remove by id field (string)...")
+        result = await db.portfolios.update_one(
+            {"_id": portfolio_obj_id},
+            {"$pull": {"items": {"id": item_id}}}
+        )
+        print(f"📊 Remove by id result: matched={result.matched_count}, modified={result.modified_count}")
+    
+    success = result.modified_count > 0
+    print(f"✅ Item removal {'succeeded' if success else 'failed'}")
+    return success
 
 
 async def remove_section_from_portfolio(db: AsyncIOMotorDatabase, portfolio_id: str, section_id: str) -> bool:

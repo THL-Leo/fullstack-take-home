@@ -2,6 +2,10 @@
 
 A responsive, dynamic, single-page application built with **Next.js** and **FastAPI** for creating and managing multimedia portfolios. This implementation demonstrates modern full-stack development practices with advanced file handling, state management, and UI/UX design.
 
+## 🎥 Demo Video
+
+**[Watch the Live Demo](https://youtu.be/mZol5hNN06I)** - See the portfolio management application in action, showcasing file uploads, section organization, and responsive design.
+
 ## 🚀 Implementation Status
 
 ### ✅ **Completed Features**

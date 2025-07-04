@@ -134,20 +134,36 @@ async def update_portfolio_item(portfolio_id: str, item_id: str, update_data: di
 @router.delete("/portfolios/{portfolio_id}/items/{item_id}")
 async def delete_portfolio_item(portfolio_id: str, item_id: str, db=Depends(get_database)):
     """Delete an item from a portfolio"""
+    print(f"🗑️ DELETE endpoint called: portfolio_id={portfolio_id}, item_id={item_id}")
+    
     # Get portfolio and item, validate they exist
     portfolio, item = await get_item_or_404(db, portfolio_id, item_id)
+    print(f"✅ Found item to delete: {list(item.keys())}")
     
     # Create PortfolioItem object for cleanup
-    portfolio_item = PortfolioItem(**item)
+    try:
+        print(f"🔧 Attempting to create PortfolioItem object...")
+        portfolio_item = PortfolioItem(**item)
+        print(f"✅ Successfully created PortfolioItem object")
+    except Exception as e:
+        print(f"❌ Error creating PortfolioItem: {str(e)}")
+        print(f"📋 Item data: {item}")
+        raise HTTPException(status_code=500, detail=f"Error creating PortfolioItem: {str(e)}")
     
     # Remove item from portfolio
+    print(f"🔄 Removing item from portfolio...")
     removed = await remove_item_from_portfolio(db, portfolio_id, item_id)
     
     if not removed:
+        print(f"❌ Item removal failed")
         raise HTTPException(status_code=500, detail="Item deletion failed")
     
+    print(f"✅ Item removed from portfolio")
+    
     # Delete physical files
+    print(f"🗂️ Cleaning up physical files...")
     cleanup_item_files(portfolio_item)
+    print(f"✅ Physical files cleaned up")
     
     return {"message": "Item deleted successfully"}
 
