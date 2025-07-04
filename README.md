@@ -25,13 +25,11 @@ A responsive, dynamic, single-page application built with **Next.js** and **Fast
 - **🎬 Media Processing**: Automatic thumbnail generation, metadata extraction, and file optimization
 - **🧹 File Management**: Automatic cleanup, UUID-based naming, and safe file operations
 
-### ❌ **Missing Critical Feature: User Authentication & Multi-Tenancy**
-
-**The application currently lacks user authentication and multi-tenancy**, which was a core requirement. This means:
-- All portfolios are globally accessible
-- No user registration/login system
-- No data isolation between users
-- No authorization or access control
+### Features I wish I could implement
+- **User Authentication & Multi-Tenancy**
+- **Video Upload**: Divide the video into chunks and have parallel upload to reduce load on the server
+- **Schema**: Better schema for the database
+- **Code Cleanup**: I wish I have more time to clean up the code because it is quite messy
 
 This represents the primary unfinished portion of the project.
 
@@ -64,13 +62,18 @@ Create `.env` files in both directories:
 
 **Frontend (.env.local):**
 ```
+# Local development API URL
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 **Backend (.env):**
 ```
-MONGODB_URL=mongodb://localhost:27017
-DATABASE_NAME=portfolio_db
+# MongoDB connection string from Atlas
+MONGODB_URL=mongodb+srv://username:password@cluster.mongodb.net/portfolio_db?retryWrites=true&w=majority
+
+# API configuration
+API_HOST=0.0.0.0
+API_PORT=8000
 ```
 
 ## 📸 Features Walkthrough
@@ -82,34 +85,6 @@ DATABASE_NAME=portfolio_db
 - **Live Portfolio View**: Real-time preview as you build
 - **Responsive Design**: Works seamlessly on desktop and mobile
 
-### 🔧 **Technical Highlights**
-- **Type-Safe Development**: Full TypeScript coverage with Zod validation
-- **Modern State Management**: Zustand with persistence and optimistic updates
-- **Advanced File Processing**: FFmpeg integration for video thumbnails
-- **Clean Architecture**: Separation of concerns with hooks, stores, and utilities
-- **Error Handling**: Comprehensive error management with user feedback
-
-## 🚀 **Future Improvements**
-
-### **Priority 1: User Authentication**
-- Implement NextAuth.js or similar authentication solution
-- Add user registration and login flows
-- Implement JWT-based API authentication
-- Add user-specific portfolio isolation
-
-### **Priority 2: Enhanced Features**
-- Portfolio sharing with public/private settings
-- Advanced media editing capabilities
-- Portfolio templates and themes
-- Export functionality (PDF, web page)
-- Analytics and view tracking
-
-### **Priority 3: Technical Enhancements**
-- Comprehensive test coverage
-- Performance monitoring and analytics
-- Advanced caching strategies
-- Rate limiting and security hardening
-- Deployment automation
 
 ## 📋 **Technical Requirements Status**
 
