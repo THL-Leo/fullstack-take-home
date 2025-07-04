@@ -6,6 +6,7 @@ import { usePortfolioStore } from '@/store/portfolioStore';
 import { api } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import Modal from '@/components/ui/Modal';
 
 interface PortfolioFormData {
   title: string;
@@ -17,7 +18,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onPortfolioChange }: HeaderProps) {
-  const [isCreating, setIsCreating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { currentPortfolio, setCurrentPortfolio, addPortfolio, deletePortfolio } = usePortfolioStore();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PortfolioFormData>();
 
@@ -40,7 +41,7 @@ export default function Header({ onPortfolioChange }: HeaderProps) {
       setCurrentPortfolio(portfolioData);
       
       reset();
-      setIsCreating(false);
+      setIsModalOpen(false);
       
       // Notify sidebar to refresh
       if (onPortfolioChange) {
@@ -61,55 +62,52 @@ export default function Header({ onPortfolioChange }: HeaderProps) {
           </div>
 
           <div className="flex items-center space-x-3">
-            {!isCreating ? (
-              <Button onClick={() => setIsCreating(true)} size="sm">
-                New Portfolio
-              </Button>
-            ) : (
-              <Button variant="ghost" onClick={() => setIsCreating(false)} size="sm">
-                Cancel
-              </Button>
-            )}
+            <Button onClick={() => setIsModalOpen(true)} size="sm">
+              New Portfolio
+            </Button>
           </div>
         </div>
 
-        {/* Create Portfolio Form */}
-        {isCreating && (
-          <div className="pb-6">
-            <div className="bg-gray-50 border border-gray-100 rounded-lg p-6">
-              <h3 className="font-medium text-gray-900 mb-4">Create New Portfolio</h3>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Portfolio Title *"
-                    {...register('title', { required: 'Title is required' })}
-                    error={errors.title?.message}
-                    placeholder="My Creative Portfolio"
-                  />
-                  <Input
-                    label="Description"
-                    {...register('description')}
-                    placeholder="Brief description (optional)"
-                  />
-                </div>
-                <div className="flex space-x-3 pt-2">
-                  <Button type="submit" size="sm">Create Portfolio</Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setIsCreating(false);
-                      reset();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
+        {/* Create Portfolio Modal */}
+        <Modal 
+          isOpen={isModalOpen} 
+          onClose={() => {
+            setIsModalOpen(false);
+            reset();
+          }} 
+          title="Create New Portfolio"
+          size="md"
+        >
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-4">
+              <Input
+                label="Portfolio Title *"
+                {...register('title', { required: 'Title is required' })}
+                error={errors.title?.message}
+                placeholder="My Creative Portfolio"
+              />
+              <Input
+                label="Description"
+                {...register('description')}
+                placeholder="Brief description (optional)"
+              />
             </div>
-          </div>
-        )}
+            <div className="flex space-x-3 pt-4">
+              <Button type="submit" size="sm">Create Portfolio</Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  reset();
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Modal>
       </div>
     </header>
   );
