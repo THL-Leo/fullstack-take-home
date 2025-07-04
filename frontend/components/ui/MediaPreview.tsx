@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import Image from 'next/image';
 
 interface MediaPreviewProps {
   type: 'image' | 'video';
@@ -29,26 +28,29 @@ export const MediaPreview: React.FC<MediaPreviewProps> = ({
 
   const getImageSrc = () => {
     if (imageError) {
-      return '/placeholder-image.png';
+      return null;
     }
     
     if (type === 'image') {
-      return url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+      const imageSrc = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+      return imageSrc;
     }
     
     // For videos, use thumbnail
     if (thumbnailBase64) {
-      return thumbnailBase64;
+      return `data:image/jpeg;base64,${thumbnailBase64}`;
     }
     
     if (thumbnailUrl) {
-      return thumbnailUrl.startsWith('http') ? thumbnailUrl : `${API_BASE_URL}${thumbnailUrl}`;
+      const thumbSrc = thumbnailUrl.startsWith('http') ? thumbnailUrl : `${API_BASE_URL}${thumbnailUrl}`;
+      return thumbSrc;
     }
     
-    return '/placeholder-video.png';
+    return null;
   };
 
-  const handleImageError = () => {
+  const handleImageError = (e: any) => {
+    console.error('Image failed to load:', e.target?.src);
     setImageError(true);
     setIsLoading(false);
   };
@@ -57,26 +59,27 @@ export const MediaPreview: React.FC<MediaPreviewProps> = ({
     setIsLoading(false);
   };
 
+  const imageSrc = getImageSrc();
+
   return (
     <div className={`relative ${className}`} onClick={onClick}>
-      {isLoading && (
+      {isLoading && !imageError && imageSrc && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded-md">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       )}
       
-      <Image
-        src={getImageSrc()}
-        alt={alt}
-        fill
-        className={`object-cover rounded-md transition-opacity duration-200 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        } ${onClick ? 'cursor-pointer hover:opacity-80' : ''}`}
-        onError={handleImageError}
-        onLoad={handleImageLoad}
-      />
+      {imageSrc && !imageError && (
+        <img
+          src={imageSrc}
+          alt={alt}
+          className={`w-full h-full object-cover rounded-md ${onClick ? 'cursor-pointer hover:opacity-80' : ''}`}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
+        />
+      )}
       
-      {type === 'video' && showPlayButton && (
+      {type === 'video' && showPlayButton && !imageError && imageSrc && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="bg-black bg-opacity-50 rounded-full p-3">
             <svg
@@ -90,11 +93,11 @@ export const MediaPreview: React.FC<MediaPreviewProps> = ({
         </div>
       )}
       
-      {imageError && (
+      {(imageError || !imageSrc) && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-md">
           <div className="text-gray-400 text-center">
             <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <p className="text-sm">Failed to load {type}</p>
           </div>

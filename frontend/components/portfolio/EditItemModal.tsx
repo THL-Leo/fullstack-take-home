@@ -160,7 +160,7 @@ export default function EditItemModal({ isOpen, onClose, item, onSuccess }: Edit
 
           {/* Section Selector */}
           <SectionSelector
-            portfolioId={currentPortfolio.id}
+            portfolioId={currentPortfolio?.id || ''}
             selectedSectionId={selectedSectionId}
             onSectionChange={setSelectedSectionId}
             newSectionTitle={newSectionTitle}

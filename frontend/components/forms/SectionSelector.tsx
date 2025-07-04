@@ -75,13 +75,13 @@ export const SectionSelector: React.FC<SectionSelectorProps> = ({
             onChange={(e) => handleSectionSelectChange(e.target.value)}
             disabled={disabled}
           >
-            <option value="">No section</option>
+            <option key="no-section" value="">No section</option>
             {sections.map((section) => (
               <option key={section.id} value={section.id}>
                 {section.title}
               </option>
             ))}
-            <option value="new">+ Create new section</option>
+            <option key="new-section" value="new">+ Create new section</option>
           </select>
         )}
       </div>

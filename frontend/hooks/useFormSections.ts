@@ -43,7 +43,7 @@ export const useFormSections = ({ portfolioId, onError }: UseFormSectionsProps) 
   const createSection = async (title: string, description?: string) => {
     try {
       setCreating(true);
-      const response = await fetch(`${API_BASE_URL}/api/portfolios/${portfolioId}/sections`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/portfolios/${portfolioId}/sections`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
