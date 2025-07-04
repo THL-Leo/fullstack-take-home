@@ -70,19 +70,44 @@ export default function EditItemModal({ isOpen, onClose, item, onSuccess }: Edit
     setError(null);
 
     try {
+      let finalSectionId = selectedSectionId;
+
+      // Create new section if needed
+      if (showNewSectionInput && newSectionTitle.trim()) {
+        try {
+          const newSection = await api.createSection(currentPortfolio.id, {
+            title: newSectionTitle.trim(),
+            description: ''
+          });
+          
+          console.log('Backend returned section:', newSection);
+          finalSectionId = newSection.id;
+          console.log('Using section ID:', finalSectionId);
+        } catch (error) {
+          console.error('Failed to create section:', error);
+          setError(getErrorMessage(error));
+          return;
+        }
+      }
+
+      console.log('EditItemModal: Before building updateData:');
+      console.log('  selectedSectionId:', selectedSectionId);
+      console.log('  finalSectionId:', finalSectionId);
+
       const updateData = {
         title: data.title,
         description: data.description,
-        section_id: selectedSectionId || undefined,
+        section_id: finalSectionId || undefined,
       };
 
+      console.log('Sending update data:', updateData);
       await api.updatePortfolioItem(currentPortfolio.id, item.id, updateData);
       
       // Update local state
       updateItem(item.id, {
         title: data.title,
         description: data.description,
-        sectionId: selectedSectionId || undefined,
+        sectionId: finalSectionId || undefined,
       });
       
       // Refresh portfolio data to ensure consistency
@@ -90,7 +115,7 @@ export default function EditItemModal({ isOpen, onClose, item, onSuccess }: Edit
       
       handleClose();
       
-      if (onSuccess) onSuccess(selectedSectionId || 'unsorted');
+      if (onSuccess) onSuccess(finalSectionId || 'unsorted');
     } catch (error) {
       console.error('Failed to update portfolio item:', error);
       setError(getErrorMessage(error));
@@ -160,6 +185,7 @@ export default function EditItemModal({ isOpen, onClose, item, onSuccess }: Edit
 
           {/* Section Selector */}
           <SectionSelector
+            key={currentPortfolio?.id || ''}
             portfolioId={currentPortfolio?.id || ''}
             selectedSectionId={selectedSectionId}
             onSectionChange={setSelectedSectionId}

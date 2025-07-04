@@ -55,10 +55,10 @@ class PortfolioItem(BaseModel):
     title: str
     description: str = ""
     metadata: ItemMetadata
-    section_id: Optional[PyObjectId] = None  # New field for section assignment
+    section_id: Optional[str] = None  # Section assignment - can be ObjectId string or regular string
     order: int = 0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         populate_by_name = True
@@ -75,8 +75,8 @@ class Section(BaseModel):
     title: str
     description: Optional[str] = None
     order: int = 0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         populate_by_name = True
@@ -93,8 +93,8 @@ class Portfolio(BaseModel):
     description: Optional[str] = None
     items: List[PortfolioItem] = []  # Keep for backward compatibility
     sections: List[Section] = []  # New sections array
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         populate_by_name = True

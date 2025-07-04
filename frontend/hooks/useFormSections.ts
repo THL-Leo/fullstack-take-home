@@ -31,7 +31,17 @@ export const useFormSections = ({ portfolioId, onError }: UseFormSectionsProps) 
       }
       
       const data = await response.json();
-      setSections(data);
+      console.log('Raw sections data from API:', data);
+      console.log('First section structure:', data[0]);
+      
+      // Map _id to id for frontend compatibility
+      const sectionsWithId = data.map((section: any) => ({
+        ...section,
+        id: section._id
+      }));
+      
+      console.log('Sections after mapping _id to id:', sectionsWithId[0]);
+      setSections(sectionsWithId);
     } catch (error) {
       console.error('Error fetching sections:', error);
       onError?.('Failed to load sections');
@@ -59,9 +69,16 @@ export const useFormSections = ({ portfolioId, onError }: UseFormSectionsProps) 
       }
 
       const newSection = await response.json();
-      setSections(prev => [...prev, newSection]);
       
-      return newSection;
+      // Map _id to id for frontend compatibility
+      const newSectionWithId = {
+        ...newSection,
+        id: newSection._id
+      };
+      
+      setSections(prev => [...prev, newSectionWithId]);
+      
+      return newSectionWithId;
     } catch (error) {
       console.error('Error creating section:', error);
       onError?.('Failed to create section');
