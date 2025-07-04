@@ -75,6 +75,72 @@ async def create_portfolio_item(portfolio_id: str, item: dict, db=Depends(get_da
     
     return new_item
 
+@router.patch("/portfolios/{portfolio_id}/items/{item_id}")
+async def update_portfolio_item(portfolio_id: str, item_id: str, update_data: dict, db=Depends(get_database)):
+    """Update a portfolio item"""
+    if not ObjectId.is_valid(portfolio_id):
+        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    
+    if not ObjectId.is_valid(item_id):
+        raise HTTPException(status_code=400, detail="Invalid item ID")
+    
+    # First, find the portfolio to verify it exists
+    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    # Find the item to verify it exists and get its position
+    item_found = False
+    item_index = None
+    
+    for i, item in enumerate(portfolio.get("items", [])):
+        # Handle different possible ID field names and types
+        item_object_id = item.get("_id") or item.get("id")
+        
+        # Convert to string for comparison if it's an ObjectId
+        if isinstance(item_object_id, ObjectId):
+            item_id_str = str(item_object_id)
+        else:
+            item_id_str = str(item_object_id) if item_object_id else None
+            
+        if item_id_str == item_id:
+            item_found = True
+            item_index = i
+            break
+    
+    if not item_found:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Build the update query using the array position
+    update_query = {}
+    for key, value in update_data.items():
+        update_query[f"items.{item_index}.{key}"] = value
+    
+    # Update the specific item using positional update
+    result = await db.portfolios.update_one(
+        {"_id": ObjectId(portfolio_id)},
+        {"$set": update_query}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    
+    # Fetch and return the updated portfolio to get the updated item
+    updated_portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
+    
+    # Find and return the updated item
+    for item in updated_portfolio.get("items", []):
+        item_object_id = item.get("_id") or item.get("id")
+        if isinstance(item_object_id, ObjectId):
+            item_id_str = str(item_object_id)
+        else:
+            item_id_str = str(item_object_id) if item_object_id else None
+            
+        if item_id_str == item_id:
+            return item
+    
+    raise HTTPException(status_code=404, detail="Updated item not found")
+
 @router.delete("/portfolios/{portfolio_id}/items/{item_id}")
 async def delete_portfolio_item(portfolio_id: str, item_id: str, db=Depends(get_database)):
     """Delete an item from a portfolio"""
