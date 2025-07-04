@@ -31,15 +31,6 @@ A responsive, dynamic, single-page application built with **Next.js** and **Fast
 
 This represents the primary unfinished portion of the project.
 
-## 🔎 **AI Tools Disclosure**
-
-This project was built using AI coding assistance. Every line of code has been reviewed and can be explained in detail, demonstrating understanding of:
-- Modern React patterns and state management
-- FastAPI best practices and async programming
-- Database design and optimization
-- File handling and media processing
-- TypeScript type safety and validation
-
 ## 🛠️ Setup Instructions
 
 ### Prerequisites
@@ -132,54 +123,4 @@ DATABASE_NAME=portfolio_db
 - Multi-tenancy (user authentication) ❌
 - User-specific portfolio access ❌
 
-## 🏗️ Architecture Overview
 
-### **Frontend Architecture**
-- **Framework**: Next.js 15 with React 19
-- **State Management**: Zustand with persistence layer
-- **Styling**: Tailwind CSS with custom components
-- **Type Safety**: TypeScript with Zod validation
-- **File Structure**: Feature-based organization with shared utilities
-
-### **Backend Architecture**
-- **Framework**: FastAPI with async/await patterns
-- **Database**: MongoDB with Motor (async driver)
-- **Validation**: Pydantic models with comprehensive schemas
-- **File Processing**: FFmpeg integration for media handling
-- **API Design**: RESTful endpoints with proper HTTP semantics
-
-### **Data Flow**
-1. **Upload**: Files processed through FFmpeg, thumbnails generated
-2. **Storage**: Media files saved locally, metadata in MongoDB
-3. **State Sync**: Optimistic updates with server synchronization
-4. **Preview**: Real-time portfolio rendering as changes are made
-
-## 📊 **Code Quality Highlights**
-
-- **Modularity**: Clean separation between components, hooks, stores, and utilities
-- **Readability**: Consistent naming conventions and comprehensive TypeScript types
-- **Error Handling**: Graceful error management with user-friendly feedback
-- **Performance**: Optimized file handling, lazy loading, and efficient state updates
-- **Maintainability**: Well-documented code with clear architectural patterns
-
-## 🎨 **UI/UX Polish**
-
-- **Responsive Design**: Mobile-first approach with adaptive layouts
-- **Modern Interface**: Clean, professional design with smooth animations
-- **User Feedback**: Loading states, progress indicators, and toast notifications
-- **Accessibility**: Keyboard navigation and screen reader support
-- **Intuitive UX**: Drag & drop, auto-save, and contextual actions
-
-## 🔧 **Creative Enhancements**
-
-Beyond the core requirements, this implementation includes:
-- **Advanced File Processing**: Video thumbnail generation with FFmpeg
-- **Optimistic Updates**: Immediate UI feedback with server sync
-- **Rich Metadata**: Automatic extraction of file dimensions, size, and format
-- **Section Management**: Flexible organization with drag-and-drop support
-- **Local Persistence**: Offline capability with automatic sync
-- **Professional UI**: Production-ready design with animations and feedback
-
----
-
-**Note**: This implementation demonstrates production-quality code architecture and user experience design, with the primary missing component being user authentication and multi-tenancy, which represents the next development phase.
