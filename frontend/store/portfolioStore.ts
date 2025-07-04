@@ -138,11 +138,9 @@ export const usePortfolioStore = create<PortfolioStore>()(
 
       // Database sync actions
       loadCompletePortfoliosFromDB: async () => {
+        const { currentPortfolio } = get();
         set({ isLoading: true, error: null });
         try {
-          // Clear localStorage to start fresh
-          localStorage.removeItem('portfolio-storage');
-          
           console.log('🔄 Loading fresh complete portfolios from database...');
           
           // Fetch all complete portfolios with items and sections
@@ -150,9 +148,23 @@ export const usePortfolioStore = create<PortfolioStore>()(
           
           console.log('✅ Loaded complete portfolios:', completePortfolios.length);
           
+          const validPortfolios = completePortfolios.filter((p): p is Portfolio => p !== null);
+          
+          // Try to preserve current portfolio if it still exists
+          let updatedCurrentPortfolio = null;
+          if (currentPortfolio) {
+            const foundPortfolio = validPortfolios.find(p => p.id === currentPortfolio.id);
+            if (foundPortfolio) {
+              updatedCurrentPortfolio = foundPortfolio;
+              console.log('✅ Preserved current portfolio:', foundPortfolio.title);
+            } else {
+              console.log('⚠️ Current portfolio no longer exists, clearing selection');
+            }
+          }
+          
           set({ 
-            portfolios: completePortfolios.filter((p): p is Portfolio => p !== null), 
-            currentPortfolio: null, // Clear current portfolio to force fresh selection
+            portfolios: validPortfolios, 
+            currentPortfolio: updatedCurrentPortfolio,
             isLoading: false 
           });
         } catch (error) {

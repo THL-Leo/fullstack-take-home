@@ -115,24 +115,26 @@ export default function PortfolioView() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white border border-gray-100 rounded-lg p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h1 className="text-2xl font-medium text-black mb-1">{currentPortfolio.title}</h1>
+    <div className="space-y-4 md:space-y-6">
+      <div className="bg-white border border-gray-100 rounded-lg p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl md:text-2xl font-medium text-black mb-1">{currentPortfolio.title}</h1>
             {currentPortfolio.description && (
-              <p className="text-gray-600">{currentPortfolio.description}</p>
+              <p className="text-gray-600 text-sm md:text-base">{currentPortfolio.description}</p>
             )}
           </div>
-          <div className="flex items-center space-x-6 ml-6">
-            <div className="text-sm text-gray-400 font-mono">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 sm:ml-6">
+            <div className="text-xs md:text-sm text-gray-400 font-mono order-2 sm:order-1">
               {currentPortfolio.items.length} items
             </div>
             <Button
               onClick={() => setIsUploadModalOpen(true)}
               size="sm"
+              className="order-1 sm:order-2"
             >
-              Add Items
+              <span className="hidden sm:inline">Add Items</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
         </div>
@@ -170,7 +172,7 @@ export default function PortfolioView() {
 
       {/* Sections and Items */}
       {sortedSections.length > 0 || itemsBySection.unsorted ? (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {/* Render sections */}
           {sortedSections.map((section) => {
             const sectionItems = itemsBySection[section.id] || [];
@@ -180,21 +182,21 @@ export default function PortfolioView() {
               <div key={section.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden">
                 {/* Section Header */}
                 <div 
-                  className="p-5 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="p-4 md:p-5 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => toggleSection(section.id)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-900">{section.title}</h3>
+                    <div className="flex items-center space-x-3 md:space-x-4 min-w-0">
+                      <div className="w-2 h-2 bg-gray-300 rounded-full flex-shrink-0"></div>
+                      <div className="min-w-0">
+                        <h3 className="text-base md:text-lg font-medium text-gray-900 truncate">{section.title}</h3>
                         {section.description && (
-                          <p className="text-sm text-gray-500 mt-1">{section.description}</p>
+                          <p className="text-xs md:text-sm text-gray-500 mt-1 line-clamp-2">{section.description}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm text-gray-400 font-mono">
+                    <div className="flex items-center space-x-6 flex-shrink-0">
+                      <span className="text-xs md:text-sm text-gray-400 font-mono">
                         {sectionItems.length} items
                       </span>
                       <button
@@ -202,10 +204,11 @@ export default function PortfolioView() {
                           e.stopPropagation();
                           handleDeleteSection(section.id, section.title);
                         }}
-                        className="text-gray-300 hover:text-gray-500 transition-colors text-xs"
+                        className="text-gray-300 hover:text-gray-500 transition-colors text-xs px-1.5 sm:px-2 py-1.5 min-h-[32px] flex items-center"
                         title="Delete section"
                       >
-                        Delete
+                        <span className="hidden sm:inline">Delete</span>
+                        <span className="sm:hidden">×</span>
                       </button>
                       <svg 
                         className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -221,8 +224,8 @@ export default function PortfolioView() {
                 
                 {/* Section Content */}
                 {isExpanded && sectionItems.length > 0 && (
-                  <div className="p-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="p-4 md:p-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                       {sectionItems.map((item) => (
                         <ItemCard
                           key={item.id}
@@ -242,19 +245,19 @@ export default function PortfolioView() {
           {itemsBySection.unsorted && itemsBySection.unsorted.length > 0 && (
             <div className="bg-white border border-gray-100 rounded-lg overflow-hidden">
               <div 
-                className="p-5 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="p-4 md:p-5 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => toggleSection('unsorted')}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">Unsorted</h3>
-                      <p className="text-sm text-gray-500 mt-1">Items not organized into sections</p>
+                  <div className="flex items-center space-x-3 md:space-x-4 min-w-0">
+                    <div className="w-2 h-2 bg-gray-300 rounded-full flex-shrink-0"></div>
+                    <div className="min-w-0">
+                      <h3 className="text-base md:text-lg font-medium text-gray-900">Unsorted</h3>
+                      <p className="text-xs md:text-sm text-gray-500 mt-1">Items not organized into sections</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <span className="text-sm text-gray-400 font-mono">
+                  <div className="flex items-center space-x-6 flex-shrink-0">
+                    <span className="text-xs md:text-sm text-gray-400 font-mono">
                       {itemsBySection.unsorted.length} items
                     </span>
                     <svg 
@@ -270,8 +273,8 @@ export default function PortfolioView() {
               </div>
               
               {expandedSections.has('unsorted') && (
-                <div className="p-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="p-4 md:p-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                     {itemsBySection.unsorted.map((item) => (
                       <ItemCard
                         key={item.id}
@@ -287,16 +290,17 @@ export default function PortfolioView() {
           )}
         </div>
       ) : (
-        <div className="bg-white border border-gray-100 rounded-lg p-16 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-            <div className="w-8 h-8 border-2 border-gray-300 rounded border-dashed"></div>
+        <div className="bg-white border border-gray-100 rounded-lg p-8 md:p-16 text-center">
+          <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <div className="w-6 h-6 md:w-8 md:h-8 border-2 border-gray-300 rounded border-dashed"></div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Items Yet</h3>
-          <p className="text-gray-500 mb-6">
+          <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">No Items Yet</h3>
+          <p className="text-gray-500 mb-4 md:mb-6 text-sm md:text-base">
             Upload your first images or videos to start building your portfolio.
           </p>
           <Button onClick={() => setIsUploadModalOpen(true)}>
-            Add Your First Item
+            <span className="hidden sm:inline">Add Your First Item</span>
+            <span className="sm:hidden">Add Item</span>
           </Button>
         </div>
       )}
