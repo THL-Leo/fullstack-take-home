@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { usePortfolioStore } from '@/store/portfolioStore';
 import { api } from '@/lib/api';
 import UploadModal from './UploadModal';
@@ -9,7 +9,6 @@ import ItemCard from './ItemCard';
 import Button from '@/components/ui/Button';
 import { PortfolioItem } from '@/types/portfolio';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function PortfolioView() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);

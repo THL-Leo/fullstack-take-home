@@ -42,9 +42,9 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
   const [isCreatingNewSection, setIsCreatingNewSection] = useState(false);
 
   const { currentPortfolio, addItem } = usePortfolioStore();
-  const { register, handleSubmit, reset, formState: { errors }, watch, setValue } = useForm<UploadFormData>();
+  const { register, handleSubmit, reset, formState: { errors }, setValue } = useForm<UploadFormData>();
   
-  const selectedSectionId = watch('sectionId');
+  // const selectedSectionId = watch('sectionId');
 
   // Load sections when modal opens
   useEffect(() => {

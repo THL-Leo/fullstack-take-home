@@ -4,6 +4,9 @@ from bson import ObjectId
 
 from app.models import Portfolio, PortfolioCreate, PortfolioItem, PortfolioItemCreate, Section, SectionCreate
 from app.database import get_database
+from app.utils.validation import validate_portfolio_id, validate_item_id, validate_section_id
+from app.utils.database import get_portfolio_or_404, get_item_or_404, get_section_or_404, update_portfolio_timestamp, remove_item_from_portfolio, remove_section_from_portfolio
+from app.utils.file_management import cleanup_item_files, cleanup_portfolio_files
 
 router = APIRouter()
 
@@ -22,26 +25,19 @@ async def create_portfolio(portfolio: PortfolioCreate, db=Depends(get_database))
 @router.get("/portfolios/{portfolio_id}", response_model=Portfolio)
 async def get_portfolio(portfolio_id: str, db=Depends(get_database)):
     """Get a portfolio by ID"""
-    if not ObjectId.is_valid(portfolio_id):
-        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
-    
-    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    
+    portfolio = await get_portfolio_or_404(db, portfolio_id)
     return Portfolio(**portfolio)
 
 @router.put("/portfolios/{portfolio_id}", response_model=Portfolio)
 async def update_portfolio(portfolio_id: str, portfolio: PortfolioCreate, db=Depends(get_database)):
     """Update a portfolio"""
-    if not ObjectId.is_valid(portfolio_id):
-        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    portfolio_obj_id = validate_portfolio_id(portfolio_id)
     
     update_data = portfolio.dict()
     update_data["updated_at"] = None  # Will be set by default_factory
     
     result = await db.portfolios.update_one(
-        {"_id": ObjectId(portfolio_id)},
+        {"_id": portfolio_obj_id},
         {"$set": update_data}
     )
     
@@ -55,13 +51,9 @@ async def update_portfolio(portfolio_id: str, portfolio: PortfolioCreate, db=Dep
 @router.post("/portfolios/{portfolio_id}/items", response_model=PortfolioItem)
 async def create_portfolio_item(portfolio_id: str, item: dict, db=Depends(get_database)):
     """Add an item to a portfolio"""
-    if not ObjectId.is_valid(portfolio_id):
-        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
-    
     # Check if portfolio exists
-    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
+    portfolio = await get_portfolio_or_404(db, portfolio_id)
+    portfolio_obj_id = validate_portfolio_id(portfolio_id)
     
     # Create item
     item["_id"] = ObjectId()
@@ -69,39 +61,28 @@ async def create_portfolio_item(portfolio_id: str, item: dict, db=Depends(get_da
     
     # Add to portfolio
     await db.portfolios.update_one(
-        {"_id": ObjectId(portfolio_id)},
+        {"_id": portfolio_obj_id},
         {"$push": {"items": new_item.dict()}}
     )
     
+    await update_portfolio_timestamp(db, portfolio_id)
     return new_item
 
 @router.patch("/portfolios/{portfolio_id}/items/{item_id}")
 async def update_portfolio_item(portfolio_id: str, item_id: str, update_data: dict, db=Depends(get_database)):
     """Update a portfolio item"""
-    if not ObjectId.is_valid(portfolio_id):
-        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    # Validate IDs and get portfolio and item
+    portfolio, item = await get_item_or_404(db, portfolio_id, item_id)
+    portfolio_obj_id = validate_portfolio_id(portfolio_id)
+    item_obj_id = validate_item_id(item_id)
     
-    if not ObjectId.is_valid(item_id):
-        raise HTTPException(status_code=400, detail="Invalid item ID")
-    
-    # First, find the portfolio to verify it exists
-    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    
-    # Find the item to verify it exists and get its position
-    item_found = False
+    # Find the item index for updating
     item_index = None
-    
     for i, item in enumerate(portfolio.get("items", [])):
-        # Handle different possible ID field names and types
-        item_object_id = item.get("_id") or item.get("id")
-        
-        # Convert to string for comparison if it's an ObjectId
-        if isinstance(item_object_id, ObjectId):
-            item_id_str = str(item_object_id)
-        else:
-            item_id_str = str(item_object_id) if item_object_id else None
+        item_id_field = item.get("_id") or item.get("id")
+        if item_id_field == item_obj_id:
+            item_index = i
+            break
             
         if item_id_str == item_id:
             item_found = True
@@ -144,117 +125,40 @@ async def update_portfolio_item(portfolio_id: str, item_id: str, update_data: di
 @router.delete("/portfolios/{portfolio_id}/items/{item_id}")
 async def delete_portfolio_item(portfolio_id: str, item_id: str, db=Depends(get_database)):
     """Delete an item from a portfolio"""
-    if not ObjectId.is_valid(portfolio_id):
-        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    # Get portfolio and item, validate they exist
+    portfolio, item = await get_item_or_404(db, portfolio_id, item_id)
     
-    if not ObjectId.is_valid(item_id):
-        raise HTTPException(status_code=400, detail="Invalid item ID")
+    # Create PortfolioItem object for cleanup
+    portfolio_item = PortfolioItem(**item)
     
-    # Find the portfolio and item
-    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
+    # Remove item from portfolio
+    removed = await remove_item_from_portfolio(db, portfolio_id, item_id)
     
-    # Find the item to get file info before deletion
-    item_to_delete = None
-    
-    for item in portfolio.get("items", []):
-        # Handle different possible ID field names and types
-        item_object_id = item.get("_id") or item.get("id")
-        
-        # Convert to string for comparison if it's an ObjectId
-        if isinstance(item_object_id, ObjectId):
-            item_id_str = str(item_object_id)
-        else:
-            item_id_str = str(item_object_id) if item_object_id else None
-            
-        if item_id_str == item_id:
-            item_to_delete = item
-            break
-    
-    if not item_to_delete:
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    # Convert item_id to ObjectId for deletion query
-    item_object_id = ObjectId(item_id)
-    
-    # Remove item from portfolio - check multiple possible field patterns
-    result = await db.portfolios.update_one(
-        {"_id": ObjectId(portfolio_id)},
-        {"$pull": {"items": {"$or": [
-            {"_id": item_object_id},
-            {"id": item_object_id},
-            {"_id": item_id},  # String version
-            {"id": item_id}    # String version
-        ]}}}
-    )
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    
-    # Verify the item was actually deleted
-    updated_portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
-    remaining_items = len(updated_portfolio.get("items", []))
-    original_items = len(portfolio.get("items", []))
-    
-    if remaining_items >= original_items:
-        raise HTTPException(status_code=500, detail="Item deletion failed - item still exists in database")
+    if not removed:
+        raise HTTPException(status_code=500, detail="Item deletion failed")
     
     # Delete physical files
-    import os
-    try:
-        # Delete main file
-        if item_to_delete.get("filename"):
-            file_path = os.path.join("uploads", item_to_delete["filename"])
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        
-        # Delete thumbnail if it exists
-        if item_to_delete.get("thumbnail_url"):
-            thumbnail_filename = item_to_delete["thumbnail_url"].replace("/uploads/", "")
-            thumbnail_path = os.path.join("uploads", thumbnail_filename)
-            if os.path.exists(thumbnail_path):
-                os.remove(thumbnail_path)
-                
-    except Exception as e:
-        print(f"Warning: Failed to delete files: {e}")
-        # Continue even if file deletion fails
+    cleanup_item_files(portfolio_item)
     
-    return {"message": "Item deleted successfully", "items_removed": original_items - remaining_items}
+    await update_portfolio_timestamp(db, portfolio_id)
+    
+    return {"message": "Item deleted successfully"}
 
 @router.delete("/portfolios/{portfolio_id}")
 async def delete_portfolio(portfolio_id: str, db=Depends(get_database)):
     """Delete an entire portfolio and all its files"""
-    if not ObjectId.is_valid(portfolio_id):
-        raise HTTPException(status_code=400, detail="Invalid portfolio ID")
+    # Get portfolio and validate it exists
+    portfolio = await get_portfolio_or_404(db, portfolio_id)
+    portfolio_obj_id = validate_portfolio_id(portfolio_id)
     
-    # Find the portfolio to get file info before deletion
-    portfolio = await db.portfolios.find_one({"_id": ObjectId(portfolio_id)})
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
+    # Create PortfolioItem objects for cleanup
+    portfolio_items = [PortfolioItem(**item) for item in portfolio.get("items", [])]
     
     # Delete all physical files
-    import os
-    try:
-        for item in portfolio.get("items", []):
-            # Delete main file
-            if item.get("filename"):
-                file_path = os.path.join("uploads", item["filename"])
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-            
-            # Delete thumbnail if it exists
-            if item.get("thumbnail_url"):
-                thumbnail_filename = item["thumbnail_url"].replace("/uploads/", "")
-                thumbnail_path = os.path.join("uploads", thumbnail_filename)
-                if os.path.exists(thumbnail_path):
-                    os.remove(thumbnail_path)
-                    
-    except Exception as e:
-        print(f"Warning: Failed to delete some files: {e}")
+    cleanup_portfolio_files(portfolio_items)
     
     # Delete portfolio from database
-    result = await db.portfolios.delete_one({"_id": ObjectId(portfolio_id)})
+    result = await db.portfolios.delete_one({"_id": portfolio_obj_id})
     
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Portfolio not found")

@@ -21,7 +21,7 @@ interface HeaderProps {
 
 export default function Header({ onPortfolioChange, onToggleSidebar, isSidebarOpen }: HeaderProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { currentPortfolio, setCurrentPortfolio, addPortfolio, deletePortfolio } = usePortfolioStore();
+  const { setCurrentPortfolio, addPortfolio } = usePortfolioStore();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PortfolioFormData>();
 
   const onSubmit = async (data: PortfolioFormData) => {
