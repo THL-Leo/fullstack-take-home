@@ -52,45 +52,12 @@ export default function Header({ onPortfolioChange }: HeaderProps) {
     }
   };
 
-  const handleDeletePortfolio = async () => {
-    if (!currentPortfolio) return;
-    
-    if (confirm(`Are you sure you want to delete "${currentPortfolio.title}"? This will delete all items and files. This action cannot be undone.`)) {
-      try {
-        await api.deletePortfolio(currentPortfolio.id);
-        deletePortfolio(currentPortfolio.id);
-        setCurrentPortfolio(null);
-        
-        // Notify sidebar to refresh
-        if (onPortfolioChange) {
-          onPortfolioChange();
-        }
-      } catch (error) {
-        console.error('Failed to delete portfolio:', error);
-        alert('Failed to delete portfolio. Please try again.');
-      }
-    }
-  };
-
   return (
     <header className="bg-white border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-6">
             <h1 className="text-xl font-medium text-black tracking-tight">Portfolio Manager</h1>
-            {currentPortfolio && (
-              <div className="flex items-center space-x-3">
-                <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-                <div className="text-sm text-gray-600">{currentPortfolio.title}</div>
-                <button
-                  onClick={handleDeletePortfolio}
-                  className="text-gray-400 hover:text-gray-600 transition-colors text-xs"
-                  title="Delete portfolio"
-                >
-                  Delete
-                </button>
-              </div>
-            )}
           </div>
 
           <div className="flex items-center space-x-3">
